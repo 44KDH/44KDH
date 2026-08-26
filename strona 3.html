@@ -1,0 +1,3135 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>44 KDH im. Baczyńskiego</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+/* =========================================================
+   PODSTAWOWE
+========================================================= */
+
+*{
+box-sizing:border-box;
+}
+
+html{
+scroll-behavior:smooth;
+}
+
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f3f5f1;
+color:#222;
+}
+
+button{
+background:#5b3a1a;
+color:white;
+border:none;
+padding:10px 15px;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+opacity:.9;
+}
+
+input,
+textarea,
+select{
+padding:10px;
+margin:5px;
+border:1px solid #ccc;
+border-radius:6px;
+font-family:Arial,sans-serif;
+}
+
+textarea{
+width:100%;
+min-height:100px;
+resize:vertical;
+}
+
+.hidden{
+display:none!important;
+}
+
+/* =========================================================
+   NAWIGACJA
+========================================================= */
+
+.navbar{
+background:#2f5d3a;
+min-height:70px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+gap:10px;
+
+position:sticky;
+top:0;
+
+z-index:1000;
+
+box-shadow:
+0 3px 10px rgba(0,0,0,.25);
+}
+
+.nav-btn{
+background:transparent;
+border:none;
+color:white;
+
+font-size:17px;
+font-weight:bold;
+
+padding:15px 25px;
+
+border-radius:6px;
+
+cursor:pointer;
+
+transition:.3s;
+}
+
+.nav-btn:hover{
+background:#3d7a4a;
+}
+
+.nav-btn.active{
+background:#5b3a1a;
+}
+
+/* =========================================================
+   STRONY
+========================================================= */
+
+.page{
+display:none;
+animation:fadeIn .4s ease;
+}
+
+.page.active{
+display:block;
+}
+
+@keyframes fadeIn{
+
+from{
+opacity:0;
+transform:translateY(10px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+
+}
+
+/* =========================================================
+   BANER
+========================================================= */
+
+.banner{
+height:420px;
+
+background:
+linear-gradient(
+rgba(0,0,0,.45),
+rgba(0,0,0,.45)
+),
+url("baner.jpg");
+
+background-size:cover;
+background-position:center;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+text-align:center;
+
+color:white;
+
+font-size:42px;
+font-weight:bold;
+
+line-height:1.3;
+
+padding:20px;
+}
+
+/* =========================================================
+   SEKCJE
+========================================================= */
+
+section{
+padding:50px 40px;
+}
+
+h2{
+text-align:center;
+color:#3e2f1c;
+font-size:30px;
+margin-bottom:35px;
+}
+
+h3{
+color:#2f5d3a;
+}
+
+/* =========================================================
+   STRONA GŁÓWNA
+========================================================= */
+
+.about{
+max-width:1000px;
+margin:auto;
+
+text-align:center;
+
+font-size:18px;
+
+line-height:1.7;
+}
+
+.about p{
+margin-bottom:20px;
+}
+
+.info-boxes{
+max-width:1000px;
+margin:40px auto;
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(220px,1fr));
+
+gap:20px;
+}
+
+.info-box{
+background:white;
+
+padding:25px;
+
+border-radius:10px;
+
+text-align:center;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.1);
+
+transition:.3s;
+}
+
+.info-box:hover{
+transform:translateY(-5px);
+}
+
+.info-icon{
+font-size:40px;
+margin-bottom:10px;
+}
+
+.info-box h3{
+margin-top:5px;
+}
+
+/* =========================================================
+   RANKING
+========================================================= */
+
+.ranking{
+max-width:700px;
+margin:auto;
+}
+
+.rank{
+background:white;
+
+margin:12px 0;
+
+padding:18px 20px;
+
+border-radius:8px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+font-size:19px;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.1);
+}
+
+.medal{
+font-size:25px;
+margin-right:12px;
+}
+
+.points{
+font-weight:bold;
+color:#5b3a1a;
+}
+
+.chart-container{
+max-width:750px;
+
+margin:40px auto;
+
+background:white;
+
+padding:25px;
+
+border-radius:10px;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.08);
+}
+
+/* =========================================================
+   ACCORDION
+========================================================= */
+
+.accordion{
+max-width:900px;
+margin:50px auto;
+}
+
+.acc-btn{
+width:100%;
+
+padding:16px;
+
+margin-top:10px;
+
+background:#2f5d3a;
+
+color:white;
+
+border:none;
+
+text-align:left;
+
+font-size:16px;
+
+cursor:pointer;
+
+border-radius:6px;
+
+transition:.3s;
+}
+
+.acc-btn:hover{
+background:#3d7a4a;
+}
+
+.acc-content{
+max-height:0;
+
+overflow:hidden;
+
+background:white;
+
+padding:0 15px;
+
+border-radius:6px;
+
+transition:max-height .4s ease;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.1);
+}
+
+.acc-content.open{
+padding:15px;
+}
+
+/* =========================================================
+   KRONIKA
+========================================================= */
+
+.chronicle-intro{
+max-width:900px;
+
+margin:0 auto 40px;
+
+text-align:center;
+
+font-size:18px;
+
+line-height:1.7;
+}
+
+.events{
+max-width:900px;
+margin:60px auto;
+}
+
+.event{
+background:white;
+
+margin:15px 0;
+
+padding:20px;
+
+border-left:6px solid #2f5d3a;
+
+border-radius:7px;
+
+box-shadow:
+0 4px 10px rgba(0,0,0,.08);
+}
+
+.event h3{
+margin-top:0;
+}
+
+.event-date{
+font-weight:bold;
+color:#5b3a1a;
+}
+
+/* =========================================================
+   GALERIA
+========================================================= */
+
+.gallery{
+max-width:1100px;
+
+margin:auto;
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(250px,1fr));
+
+gap:18px;
+}
+
+.gallery-item{
+background:white;
+
+padding:8px;
+
+border-radius:10px;
+
+box-shadow:
+0 5px 12px rgba(0,0,0,.12);
+}
+
+.gallery img{
+width:100%;
+
+height:220px;
+
+object-fit:cover;
+
+border-radius:7px;
+
+display:block;
+
+transition:.3s;
+}
+
+.gallery img:hover{
+transform:scale(1.03);
+}
+
+/* =========================================================
+   PDF
+========================================================= */
+
+.pdfs{
+display:flex;
+
+flex-wrap:wrap;
+
+justify-content:center;
+
+gap:20px;
+
+margin-top:30px;
+}
+
+.pdf{
+background:white;
+
+padding:20px;
+
+border-radius:8px;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.1);
+
+text-align:center;
+
+min-width:160px;
+}
+
+/* =========================================================
+   KALENDARZ
+========================================================= */
+
+.calendar-info{
+max-width:800px;
+
+margin:0 auto 35px;
+
+text-align:center;
+
+font-size:18px;
+
+line-height:1.7;
+}
+
+.calendar-box{
+max-width:1100px;
+
+margin:auto;
+
+background:white;
+
+padding:20px;
+
+border-radius:10px;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.1);
+}
+
+.calendar-frame{
+width:100%;
+
+height:700px;
+
+border:none;
+
+border-radius:8px;
+}
+
+.calendar-placeholder{
+min-height:500px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+text-align:center;
+
+background:#f3f5f1;
+
+border-radius:8px;
+
+padding:30px;
+
+color:#666;
+
+font-size:18px;
+}
+
+/* =========================================================
+   PANEL KADRY
+========================================================= */
+
+.admin-login{
+max-width:500px;
+
+margin:60px auto;
+
+background:white;
+
+padding:30px;
+
+border-radius:10px;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.1);
+
+text-align:center;
+}
+
+.admin-login input{
+width:80%;
+}
+
+.admin-panel{
+max-width:1100px;
+
+margin:40px auto;
+}
+
+.admin-box{
+background:white;
+
+padding:25px;
+
+margin-bottom:25px;
+
+border-radius:10px;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.08);
+}
+
+.admin-box h3{
+margin-top:0;
+
+border-bottom:
+2px solid #e0e0e0;
+
+padding-bottom:10px;
+}
+
+.admin-row{
+display:grid;
+
+grid-template-columns:
+1fr 1fr;
+
+gap:15px;
+
+margin-bottom:15px;
+}
+
+.admin-row label{
+font-weight:bold;
+
+display:block;
+
+margin-bottom:5px;
+}
+
+.admin-row input,
+.admin-row textarea{
+width:100%;
+
+margin:0;
+}
+
+.team-admin{
+display:grid;
+
+grid-template-columns:
+1fr 150px 120px;
+
+gap:10px;
+
+align-items:center;
+
+margin:10px 0;
+}
+
+.event-admin{
+background:#f3f5f1;
+
+padding:15px;
+
+border-radius:8px;
+
+margin:10px 0;
+}
+
+.event-admin input,
+.event-admin textarea{
+width:100%;
+
+margin:5px 0;
+}
+
+.admin-actions{
+display:flex;
+
+gap:10px;
+
+flex-wrap:wrap;
+
+margin-top:15px;
+}
+
+.logout{
+background:#8b0000;
+}
+
+.save{
+background:#2f5d3a;
+}
+
+.danger{
+background:#8b0000;
+}
+
+/* =========================================================
+   STOPKA
+========================================================= */
+
+.footer{
+background:#5b3a1a;
+
+color:white;
+
+text-align:center;
+
+padding:30px;
+
+margin-top:30px;
+}
+
+.footer a{
+color:white;
+
+font-size:18px;
+
+font-weight:bold;
+
+text-decoration:none;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:700px){
+
+.navbar{
+height:auto;
+
+padding:8px;
+
+gap:3px;
+
+flex-wrap:wrap;
+}
+
+.nav-btn{
+font-size:14px;
+
+padding:12px 10px;
+}
+
+.banner{
+height:320px;
+
+font-size:28px;
+}
+
+section{
+padding:35px 20px;
+}
+
+.rank{
+font-size:16px;
+}
+
+.admin-row{
+grid-template-columns:1fr;
+}
+
+.team-admin{
+grid-template-columns:1fr;
+}
+
+.calendar-frame{
+height:600px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- =========================================================
+     NAWIGACJA
+========================================================= -->
+
+<nav class="navbar">
+
+<button
+class="nav-btn active"
+onclick="showPage('home',this)"
+>
+🏕️ Drużyna
+</button>
+
+
+<button
+class="nav-btn"
+onclick="showPage('rankingPage',this)"
+>
+🏆 Punktacja
+</button>
+
+
+<button
+class="nav-btn"
+onclick="showPage('chronicle',this)"
+>
+📖 Kronika
+</button>
+
+
+<button
+class="nav-btn"
+onclick="showPage('calendarPage',this)"
+>
+📅 Kalendarz
+</button>
+
+
+<button
+class="nav-btn"
+onclick="showPage('adminPage',this)"
+>
+🔐 Kadra
+</button>
+
+</nav>
+
+
+<!-- =========================================================
+     STRONA GŁÓWNA
+========================================================= -->
+
+<div id="home" class="page active">
+
+
+<div
+class="banner"
+id="bannerTitle"
+>
+44 Krakowska Drużyna Harcerzy<br>
+im. Krzysztofa Kamila Baczyńskiego
+</div>
+
+
+<section>
+
+<h2 id="aboutTitle">
+O drużynie
+</h2>
+
+
+<div class="about">
+
+<p id="aboutText1">
+<strong>
+44 Krakowska Drużyna Harcerzy
+im. Krzysztofa Kamila Baczyńskiego
+</strong>
+to drużyna harcerska działająca w Krakowie.
+</p>
+
+
+<p id="aboutText2">
+Naszą drużynę tworzą harcerze,
+których łączy przyjaźń,
+służba, przygoda oraz ciągła praca nad sobą.
+Stawiamy na samodzielność,
+braterstwo i puszczański charakter harcerstwa.
+</p>
+
+
+<p id="aboutText3">
+Drużyna jest podzielona na zastępy,
+które posiadają własne tradycje,
+obrzędowość i system pracy.
+</p>
+
+</div>
+
+
+<div class="info-boxes">
+
+
+<div class="info-box">
+
+<div class="info-icon">
+⚜️
+</div>
+
+<h3>Patron</h3>
+
+<p id="patron">
+Krzysztof Kamil Baczyński
+</p>
+
+</div>
+
+
+<div class="info-box">
+
+<div class="info-icon">
+🏕️
+</div>
+
+<h3>Zastępy</h3>
+
+<p id="teamsHome">
+Lew • Żubr • Skała • Puszcza
+</p>
+
+</div>
+
+
+<div class="info-box">
+
+<div class="info-icon">
+🌲
+</div>
+
+<h3>Charakter</h3>
+
+<p id="character">
+Harcerstwo puszczańskie,
+przygoda i służba
+</p>
+
+</div>
+
+
+<div class="info-box">
+
+<div class="info-icon">
+🤝
+</div>
+
+<h3>Braterstwo</h3>
+
+<p id="brotherhood">
+Wspólna praca,
+odpowiedzialność i przyjaźń
+</p>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+<section>
+
+<h2 id="historyTitle">
+Nasza drużyna
+</h2>
+
+
+<div class="about">
+
+<p id="historyText">
+Tutaj możesz później umieścić
+dokładniejszą historię drużyny,
+informacje o jej założeniu,
+patronie, tradycjach oraz
+najważniejszych wydarzeniach.
+</p>
+
+
+<p id="historyText2">
+Możemy również stworzyć tutaj
+osobne sekcje dotyczące
+<strong>
+zastępów, kadry, obrzędowości
+oraz historii drużyny
+</strong>.
+</p>
+
+</div>
+
+</section>
+
+
+<div class="footer">
+
+44 KDH im. Krzysztofa Kamila Baczyńskiego
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     PUNKTACJA
+========================================================= -->
+
+<div id="rankingPage" class="page">
+
+<section>
+
+<h2>
+🏆 Punktacja Zastępów
+</h2>
+
+
+<div
+class="ranking"
+id="ranking"
+></div>
+
+
+<div class="chart-container">
+
+<canvas id="chart"></canvas>
+
+</div>
+
+
+<div class="accordion">
+
+<h3 style="text-align:center;">
+Regulamin Punktacji
+</h3>
+
+
+<button class="acc-btn">
+Punktacja
+</button>
+
+
+<div class="acc-content">
+
+<ul>
+
+<li>Stopień +40</li>
+
+<li>Sprawność +10</li>
+
+<li>Biwak +30</li>
+
+<li>Zbiórka +10</li>
+
+<li>
+Frekwencja – wypłata za osobę =
+30 ÷ liczba osób w zastępie
+</li>
+
+<li>
+Zorganizowana zbiórka +5
+</li>
+
+<li>
+Kurs zakończony certyfikatem +10
+</li>
+
+</ul>
+
+</div>
+
+
+<button class="acc-btn">
+Zawiszacy ×1.2
+</button>
+
+
+<div class="acc-content">
+
+<ul>
+
+<li>
+Każdy członek zastępu ma przyszyte 3 sprawności
+</li>
+
+<li>
+Każdy członek zastępu ma wzorowe umundurowanie
+</li>
+
+<li>
+Każdy członek zastępu zdobywa stopień adekwatny do wieku
+</li>
+
+<li>
+Zastęp prowadzi kronikę zastępu
+(Fizyczną/Internetową)
+</li>
+
+<li>
+Każdy członek zastępu zna:
+Hymn drużyny, Płonie ognisko,
+Bratnie słowo, Kanon Słowika,
+Hymn ZHR
+</li>
+
+<li>
+Zastęp posiada swój obrzęd
+</li>
+
+<li>
+Zastęp posiada proporcowego
+</li>
+
+</ul>
+
+</div>
+
+
+<button class="acc-btn">
+Bojowe Szkoły ×1.4
+</button>
+
+
+<div class="acc-content">
+
+<ul>
+
+<li>
+Każdy członek zastępu ma przyszyte 6 sprawności
+</li>
+
+<li>
+Zastęp posiada podzastępowego
+</li>
+
+<li>
+Zastęp posiada własne stałe tajne
+powitanie i pożegnanie,
+szyfr i okrzyk
+</li>
+
+<li>
+Jeden członek zastępu potrafi grać
+na instrumencie
+(Gitara/werbel/Sygnałówka)
+</li>
+
+<li>
+Zastęp zna 10 piosenek ogniskowych
+</li>
+
+<li>
+Zastęp posiada swoją skrzynię oraz sprzęt
+</li>
+
+</ul>
+
+</div>
+
+
+<button class="acc-btn">
+Grupy Szturmowe ×1.6
+</button>
+
+
+<div class="acc-content">
+
+<ul>
+
+<li>
+Każdy członek zastępu ma przyszyte 9 sprawności
+</li>
+
+<li>
+Każdy członek zastępu posiada oznaczoną funkcję
+</li>
+
+<li>
+Zastęp posiada Gitarzystę / Dobosza lub Sygnalistę
+</li>
+
+<li>
+Zastęp posiada swoją piosenkę
+</li>
+
+<li>
+Zastęp zna 20 piosenek ogniskowych
+</li>
+
+<li>
+Zastęp posiada swoją apteczkę
+</li>
+
+</ul>
+
+</div>
+
+</div>
+
+</section>
+
+
+<div class="footer">
+
+44 KDH im. Krzysztofa Kamila Baczyńskiego
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     KRONIKA
+========================================================= -->
+
+<div id="chronicle" class="page">
+
+<section>
+
+<h2>
+📖 Kronika Drużyny
+</h2>
+
+
+<div class="chronicle-intro">
+
+<p>
+<strong>
+Witaj w kronice 44 KDH!
+</strong>
+</p>
+
+
+<p>
+To miejsce, w którym będziemy
+zapisywać historię drużyny —
+nasze biwaki, obozy, zbiórki,
+wydarzenia oraz najważniejsze
+chwile spędzone razem.
+</p>
+
+</div>
+
+
+<div
+class="events"
+id="eventsContainer"
+></div>
+
+</section>
+
+
+<section>
+
+<h2>
+📸 Galeria
+</h2>
+
+
+<div class="gallery">
+
+<div class="gallery-item">
+<img src="1.jpg" alt="Zdjęcie drużyny">
+</div>
+
+<div class="gallery-item">
+<img src="2.jpg" alt="Zdjęcie drużyny">
+</div>
+
+<div class="gallery-item">
+<img src="3.jpg" alt="Zdjęcie drużyny">
+</div>
+
+<div class="gallery-item">
+<img src="4.jpg" alt="Zdjęcie drużyny">
+</div>
+
+<div class="gallery-item">
+<img src="5.jpg" alt="Zdjęcie drużyny">
+</div>
+
+<div class="gallery-item">
+<img src="6.jpg" alt="Zdjęcie drużyny">
+</div>
+
+</div>
+
+</section>
+
+
+<section>
+
+<h2>
+📄 Dokumenty
+</h2>
+
+
+<div class="pdfs">
+
+<div class="pdf">
+
+Młodzik
+
+<br><br>
+
+<a
+href="mlodzik.pdf"
+download
+>
+
+<button>
+Pobierz
+</button>
+
+</a>
+
+</div>
+
+
+<div class="pdf">
+
+Wywiadowca
+
+<br><br>
+
+<a
+href="wywiadowca.pdf"
+download
+>
+
+<button>
+Pobierz
+</button>
+
+</a>
+
+</div>
+
+
+<div class="pdf">
+
+Ćwik
+
+<br><br>
+
+<a
+href="cwik.pdf"
+download
+>
+
+<button>
+Pobierz
+</button>
+
+</a>
+
+</div>
+
+
+<div class="pdf">
+
+Zgoda
+
+<br><br>
+
+<a
+href="zgoda.pdf"
+download
+>
+
+<button>
+Pobierz
+</button>
+
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+
+<div class="footer">
+
+<a
+href="https://www.facebook.com/profile.php?id=100066963145301"
+target="_blank"
+>
+Facebook Drużyny
+</a>
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     KALENDARZ
+========================================================= -->
+
+<div id="calendarPage" class="page">
+
+<section>
+
+<h2>
+📅 Kalendarz Drużyny
+</h2>
+
+
+<div class="calendar-info">
+
+<p id="calendarText">
+Tutaj znajdą się zbiórki,
+biwaki, obozy, wyjazdy oraz
+inne wydarzenia drużyny.
+</p>
+
+</div>
+
+
+<div class="calendar-box">
+
+<div
+id="calendarContainer"
+class="calendar-placeholder"
+>
+
+<div>
+
+<h3>
+📅 Kalendarz Google
+</h3>
+
+<p>
+Kalendarz nie został jeszcze podłączony.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<div class="footer">
+
+44 KDH im. Krzysztofa Kamila Baczyńskiego
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     PANEL KADRY
+========================================================= -->
+
+<div id="adminPage" class="page">
+
+<section>
+
+<h2>
+🔐 Panel Kadry
+</h2>
+
+
+<!-- LOGOWANIE -->
+
+<div
+id="adminLogin"
+class="admin-login"
+>
+
+<h3>
+Logowanie do panelu
+</h3>
+
+
+<p>
+Panel przeznaczony wyłącznie dla kadry drużyny.
+</p>
+
+
+<input
+type="password"
+id="adminPassword"
+placeholder="Hasło kadry"
+>
+
+
+<br>
+
+
+<button onclick="adminLogin()">
+Zaloguj
+</button>
+
+</div>
+
+
+<!-- PANEL -->
+
+<div
+id="adminPanel"
+class="admin-panel hidden"
+>
+
+
+<div class="admin-box">
+
+<h3>
+⚙️ Panel administracyjny
+</h3>
+
+<p>
+Tutaj możesz edytować zawartość strony.
+Po zapisaniu zmiany zostaną zachowane
+w tej przeglądarce.
+</p>
+
+
+<button
+class="logout"
+onclick="logout()"
+>
+Wyloguj
+</button>
+
+</div>
+
+
+<!-- STRONA GŁÓWNA -->
+
+<div class="admin-box">
+
+<h3>
+🏕️ Strona główna
+</h3>
+
+
+<label>
+Tytuł banera
+</label>
+
+<input
+id="editBanner"
+style="width:100%;"
+>
+
+
+<label>
+Opis 1
+</label>
+
+<textarea
+id="editAbout1"
+></textarea>
+
+
+<label>
+Opis 2
+</label>
+
+<textarea
+id="editAbout2"
+></textarea>
+
+
+<label>
+Opis 3
+</label>
+
+<textarea
+id="editAbout3"
+></textarea>
+
+
+<div class="admin-row">
+
+<div>
+
+<label>
+Patron
+</label>
+
+<input
+id="editPatron"
+>
+
+</div>
+
+
+<div>
+
+<label>
+Charakter
+</label>
+
+<input
+id="editCharacter"
+>
+
+</div>
+
+</div>
+
+
+<div class="admin-row">
+
+<div>
+
+<label>
+Braterstwo
+</label>
+
+<input
+id="editBrotherhood"
+>
+
+</div>
+
+
+<div>
+
+<label>
+Tytuł historii
+</label>
+
+<input
+id="editHistoryTitle"
+>
+
+</div>
+
+</div>
+
+
+<label>
+Historia drużyny
+</label>
+
+<textarea
+id="editHistory"
+></textarea>
+
+
+<label>
+Drugi tekst historii
+</label>
+
+<textarea
+id="editHistory2"
+></textarea>
+
+
+<div class="admin-actions">
+
+<button
+class="save"
+onclick="saveHome()"
+>
+💾 Zapisz stronę główną
+</button>
+
+</div>
+
+</div>
+
+
+<!-- ZASTĘPY -->
+
+<div class="admin-box">
+
+<h3>
+🏆 Zastępy i punktacja
+</h3>
+
+
+<div id="teamAdmin"></div>
+
+
+<div class="admin-actions">
+
+<button
+class="save"
+onclick="saveTeams()"
+>
+💾 Zapisz zastępy
+</button>
+
+</div>
+
+</div>
+
+
+<!-- KRONIKA -->
+
+<div class="admin-box">
+
+<h3>
+📖 Kronika
+</h3>
+
+
+<div id="eventsAdmin"></div>
+
+
+<div class="admin-actions">
+
+<button
+onclick="addEventAdmin()"
+>
+➕ Dodaj wydarzenie
+</button>
+
+
+<button
+class="save"
+onclick="saveEvents()"
+>
+💾 Zapisz kronikę
+</button>
+
+</div>
+
+</div>
+
+
+<!-- KALENDARZ -->
+
+<div class="admin-box">
+
+<h3>
+📅 Kalendarz Google
+</h3>
+
+
+<label>
+Opis kalendarza
+</label>
+
+<textarea
+id="editCalendarText"
+></textarea>
+
+
+<label>
+Adres iframe Google Calendar
+</label>
+
+<input
+id="editCalendarUrl"
+style="width:100%;"
+placeholder="https://calendar.google.com/calendar/embed?src=..."
+>
+
+
+<p>
+W Google Calendar wybierz
+<strong>
+Ustawienia → Integruj kalendarz
+</strong>
+i skopiuj adres z pola
+<strong>
+„Kod integracji”
+</strong>
+lub odpowiedni adres kalendarza.
+</p>
+
+
+<div class="admin-actions">
+
+<button
+class="save"
+onclick="saveCalendar()"
+>
+💾 Zapisz kalendarz
+</button>
+
+</div>
+
+</div>
+
+
+<!-- GALERIA -->
+
+<div class="admin-box">
+
+<h3>
+📸 Galeria
+</h3>
+
+
+<p>
+Wpisz nazwy zdjęć znajdujących się
+w tym samym repozytorium GitHub.
+</p>
+
+
+<div class="admin-row">
+
+<div>
+
+<label>
+Zdjęcie 1
+</label>
+
+<input id="photo1">
+
+</div>
+
+<div>
+
+<label>
+Zdjęcie 2
+</label>
+
+<input id="photo2">
+
+</div>
+
+</div>
+
+
+<div class="admin-row">
+
+<div>
+
+<label>
+Zdjęcie 3
+</label>
+
+<input id="photo3">
+
+</div>
+
+<div>
+
+<label>
+Zdjęcie 4
+</label>
+
+<input id="photo4">
+
+</div>
+
+</div>
+
+
+<div class="admin-row">
+
+<div>
+
+<label>
+Zdjęcie 5
+</label>
+
+<input id="photo5">
+
+</div>
+
+<div>
+
+<label>
+Zdjęcie 6
+</label>
+
+<input id="photo6">
+
+</div>
+
+</div>
+
+
+<div class="admin-actions">
+
+<button
+class="save"
+onclick="savePhotos()"
+>
+💾 Zapisz zdjęcia
+</button>
+
+</div>
+
+</div>
+
+
+<!-- HASŁO -->
+
+<div class="admin-box">
+
+<h3>
+🔑 Zmiana hasła
+</h3>
+
+
+<input
+type="password"
+id="newPassword"
+placeholder="Nowe hasło"
+>
+
+
+<button
+onclick="changePassword()"
+>
+Zmień hasło
+</button>
+
+</div>
+
+
+<!-- RESET -->
+
+<div class="admin-box">
+
+<h3>
+⚠️ Reset strony
+</h3>
+
+
+<p>
+Przywraca wszystkie dane do ustawień
+początkowych.
+</p>
+
+
+<button
+class="danger"
+onclick="resetData()"
+>
+Przywróć ustawienia domyślne
+</button>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+<div class="footer">
+
+44 KDH im. Krzysztofa Kamila Baczyńskiego
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+/* =========================================================
+   DOMYŚLNE DANE
+========================================================= */
+
+const defaultData={
+
+password:"harcerze44",
+
+banner:
+"44 Krakowska Drużyna Harcerzy<br>im. Krzysztofa Kamila Baczyńskiego",
+
+about1:
+"<strong>44 Krakowska Drużyna Harcerzy im. Krzysztofa Kamila Baczyńskiego</strong> to drużyna harcerska działająca w Krakowie.",
+
+about2:
+"Naszą drużynę tworzą harcerze, których łączy przyjaźń, służba, przygoda oraz ciągła praca nad sobą. Stawiamy na samodzielność, braterstwo i puszczański charakter harcerstwa.",
+
+about3:
+"Drużyna jest podzielona na zastępy, które posiadają własne tradycje, obrzędowość i system pracy.",
+
+patron:
+"Krzysztof Kamil Baczyński",
+
+character:
+"Harcerstwo puszczańskie, przygoda i służba",
+
+brotherhood:
+"Wspólna praca, odpowiedzialność i przyjaźń",
+
+historyTitle:
+"Nasza drużyna",
+
+history:
+"Tutaj możesz później umieścić dokładniejszą historię drużyny, informacje o jej założeniu, patronie, tradycjach oraz najważniejszych wydarzeniach.",
+
+history2:
+"Możemy również stworzyć tutaj osobne sekcje dotyczące zastępów, kadry, obrzędowości oraz historii drużyny.",
+
+teams:[
+
+{
+name:"Lew",
+points:0
+},
+
+{
+name:"Żubr",
+points:0
+},
+
+{
+name:"Skała",
+points:0
+},
+
+{
+name:"Puszcza",
+points:0
+}
+
+],
+
+events:[
+
+{
+title:"Biwak drużyny",
+date:"2026",
+text:"Opis wydarzenia może zostać tutaj uzupełniony."
+},
+
+{
+title:"Obóz drużyny",
+date:"2026",
+text:"Tutaj może znaleźć się opis obozu, najważniejszych wydarzeń, zdobytych sprawności, zdjęć oraz historii zastępów."
+},
+
+{
+title:"Ważne wydarzenie drużyny",
+date:"2026",
+text:"Kolejne wydarzenia możemy dodawać tutaj."
+}
+
+],
+
+calendarText:
+"Tutaj znajdą się zbiórki, biwaki, obozy, wyjazdy oraz inne wydarzenia drużyny.",
+
+calendarUrl:"",
+
+photos:[
+
+"1.jpg",
+"2.jpg",
+"3.jpg",
+"4.jpg",
+"5.jpg",
+"6.jpg"
+
+]
+
+};
+
+
+/* =========================================================
+   WCZYTANIE DANYCH
+========================================================= */
+
+let data;
+
+const savedData=
+localStorage.getItem("kdhWebsiteData");
+
+
+if(savedData){
+
+try{
+
+data=JSON.parse(savedData);
+
+}catch(e){
+
+data=JSON.parse(
+JSON.stringify(defaultData)
+);
+
+}
+
+}else{
+
+data=JSON.parse(
+JSON.stringify(defaultData)
+);
+
+}
+
+
+/* =========================================================
+   ZAPIS
+========================================================= */
+
+function saveData(){
+
+localStorage.setItem(
+"kdhWebsiteData",
+JSON.stringify(data)
+);
+
+}
+
+
+/* =========================================================
+   ZAKŁADKI
+========================================================= */
+
+function showPage(pageId,button){
+
+document.querySelectorAll(".page").forEach(page=>{
+
+page.classList.remove("active");
+
+});
+
+
+document.getElementById(pageId)
+.classList.add("active");
+
+
+document.querySelectorAll(".nav-btn")
+.forEach(btn=>{
+
+btn.classList.remove("active");
+
+});
+
+
+button.classList.add("active");
+
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+
+/* =========================================================
+   ACCORDION
+========================================================= */
+
+document.querySelectorAll(".acc-btn")
+.forEach(btn=>{
+
+btn.addEventListener("click",()=>{
+
+const content=
+btn.nextElementSibling;
+
+
+document.querySelectorAll(".acc-content")
+.forEach(c=>{
+
+if(c!==content){
+
+c.style.maxHeight=null;
+
+c.classList.remove("open");
+
+}
+
+});
+
+
+if(content.style.maxHeight){
+
+content.style.maxHeight=null;
+
+content.classList.remove("open");
+
+}else{
+
+content.style.maxHeight=
+content.scrollHeight+"px";
+
+content.classList.add("open");
+
+}
+
+});
+
+});
+
+
+/* =========================================================
+   STRONA GŁÓWNA — RENDER
+========================================================= */
+
+function renderHome(){
+
+document.getElementById("bannerTitle")
+.innerHTML=data.banner;
+
+document.getElementById("aboutText1")
+.innerHTML=data.about1;
+
+document.getElementById("aboutText2")
+innerHTML=data.about2;
+
+document.getElementById("aboutText3")
+.innerHTML=data.about3;
+
+document.getElementById("patron")
+.innerHTML=data.patron;
+
+document.getElementById("character")
+.innerHTML=data.character;
+
+document.getElementById("brotherhood")
+.innerHTML=data.brotherhood;
+
+document.getElementById("historyTitle")
+.innerHTML=data.historyTitle;
+
+document.getElementById("historyText")
+.innerHTML=data.history;
+
+document.getElementById("historyText2")
+.innerHTML=data.history2;
+
+
+document.getElementById("teamsHome")
+.innerHTML=
+data.teams.map(t=>t.name).join(" • ");
+
+}
+
+
+/* =========================================================
+   PUNKTACJA
+========================================================= */
+
+let chart;
+
+
+function renderRanking(){
+
+data.teams.sort(
+(a,b)=>b.points-a.points
+);
+
+
+let html="";
+
+
+data.teams.forEach((team,index)=>{
+
+let medal="";
+
+if(index===0)
+medal="🥇";
+
+if(index===1)
+medal="🥈";
+
+if(index===2)
+medal="🥉";
+
+
+html+=`
+
+<div class="rank">
+
+<div>
+
+<span class="medal">
+${medal}
+</span>
+
+${team.name}
+
+</div>
+
+<span class="points">
+
+${team.points} pkt
+
+</span>
+
+</div>
+
+`;
+
+});
+
+
+document.getElementById("ranking")
+.innerHTML=html;
+
+
+updateChart();
+
+}
+
+
+function updateChart(){
+
+const labels=
+data.teams.map(t=>t.name);
+
+const points=
+data.teams.map(t=>t.points);
+
+
+if(chart)
+chart.destroy();
+
+
+chart=new Chart(
+
+document.getElementById("chart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:labels,
+
+datasets:[{
+
+label:"Punkty",
+
+data:points,
+
+backgroundColor:[
+
+"#3f7d20",
+"#6a994e",
+"#a68a64",
+"#5b3a1a"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+display:false
+}
+
+},
+
+scales:{
+
+y:{
+beginAtZero:true
+}
+
+}
+
+}
+
+}
+
+);
+
+}
+
+
+/* =========================================================
+   KRONIKA
+========================================================= */
+
+function renderEvents(){
+
+let html="";
+
+
+data.events.forEach(event=>{
+
+html+=`
+
+<div class="event">
+
+<h3>
+${escapeHTML(event.title)}
+</h3>
+
+<div class="event-date">
+${escapeHTML(event.date)}
+</div>
+
+<p>
+${escapeHTML(event.text)}
+</p>
+
+</div>
+
+`;
+
+});
+
+
+document.getElementById(
+"eventsContainer"
+).innerHTML=html;
+
+}
+
+
+/* =========================================================
+   GALERIA
+========================================================= */
+
+function renderPhotos(){
+
+const images=
+document.querySelectorAll(".gallery img");
+
+
+data.photos.forEach((photo,index)=>{
+
+if(images[index]){
+
+images[index].src=photo;
+
+}
+
+});
+
+}
+
+
+/* =========================================================
+   KALENDARZ
+========================================================= */
+
+function renderCalendar(){
+
+document.getElementById(
+"calendarText"
+).innerHTML=
+data.calendarText;
+
+
+const container=
+document.getElementById(
+"calendarContainer"
+);
+
+
+if(data.calendarUrl.trim()!==""){
+
+container.innerHTML=`
+
+<iframe
+
+class="calendar-frame"
+
+src="${escapeAttribute(data.calendarUrl)}"
+
+frameborder="0"
+
+scrolling="no"
+
+></iframe>
+
+`;
+
+}else{
+
+container.innerHTML=`
+
+<div>
+
+<h3>
+📅 Kalendarz Google
+</h3>
+
+<p>
+Kalendarz nie został jeszcze podłączony.
+</p>
+
+</div>
+
+`;
+
+}
+
+}
+
+
+/* =========================================================
+   PANEL ADMINISTRACYJNY
+========================================================= */
+
+let loggedIn=false;
+
+
+function adminLogin(){
+
+const password=
+document.getElementById(
+"adminPassword"
+).value;
+
+
+if(password===data.password){
+
+loggedIn=true;
+
+
+document.getElementById(
+"adminLogin"
+).classList.add("hidden");
+
+
+document.getElementById(
+"adminPanel"
+).classList.remove("hidden");
+
+
+loadAdminData();
+
+
+alert("Zalogowano do panelu kadry.");
+
+}else{
+
+alert("Nieprawidłowe hasło.");
+
+}
+
+}
+
+
+function logout(){
+
+loggedIn=false;
+
+
+document.getElementById(
+"adminLogin"
+).classList.remove("hidden");
+
+
+document.getElementById(
+"adminPanel"
+).classList.add("hidden");
+
+
+document.getElementById(
+"adminPassword"
+).value="";
+
+}
+
+
+/* =========================================================
+   ŁADOWANIE PANELU
+========================================================= */
+
+function loadAdminData(){
+
+document.getElementById("editBanner")
+.value=data.banner;
+
+document.getElementById("editAbout1")
+.value=data.about1;
+
+document.getElementById("editAbout2")
+.value=data.about2;
+
+document.getElementById("editAbout3")
+.value=data.about3;
+
+document.getElementById("editPatron")
+.value=data.patron;
+
+document.getElementById("editCharacter")
+.value=data.character;
+
+document.getElementById("editBrotherhood")
+.value=data.brotherhood;
+
+document.getElementById("editHistoryTitle")
+.value=data.historyTitle;
+
+document.getElementById("editHistory")
+.value=data.history;
+
+document.getElementById("editHistory2")
+.value=data.history2;
+
+document.getElementById("editCalendarText")
+.value=data.calendarText;
+
+document.getElementById("editCalendarUrl")
+.value=data.calendarUrl;
+
+
+data.photos.forEach((photo,index)=>{
+
+const input=
+document.getElementById(
+"photo"+(index+1)
+);
+
+if(input)
+input.value=photo;
+
+});
+
+
+renderTeamAdmin();
+
+renderEventsAdmin();
+
+}
+
+
+/* =========================================================
+   ZAPIS STRONY GŁÓWNEJ
+========================================================= */
+
+function saveHome(){
+
+data.banner=
+document.getElementById(
+"editBanner"
+).value;
+
+data.about1=
+document.getElementById(
+"editAbout1"
+).value;
+
+data.about2=
+document.getElementById(
+"editAbout2"
+).value;
+
+data.about3=
+document.getElementById(
+"editAbout3"
+).value;
+
+data.patron=
+document.getElementById(
+"editPatron"
+).value;
+
+data.character=
+document.getElementById(
+"editCharacter"
+).value;
+
+data.brotherhood=
+document.getElementById(
+"editBrotherhood"
+).value;
+
+data.historyTitle=
+document.getElementById(
+"editHistoryTitle"
+).value;
+
+data.history=
+document.getElementById(
+"editHistory"
+).value;
+
+data.history2=
+document.getElementById(
+"editHistory2"
+).value;
+
+
+saveData();
+
+renderHome();
+
+alert(
+"Strona główna została zapisana."
+);
+
+}
+
+
+/* =========================================================
+   PANEL ZASTĘPÓW
+========================================================= */
+
+function renderTeamAdmin(){
+
+let html="";
+
+
+data.teams.forEach((team,index)=>{
+
+html+=`
+
+<div class="team-admin">
+
+<input
+id="teamName${index}"
+value="${escapeAttribute(team.name)}"
+placeholder="Nazwa zastępu"
+>
+
+<input
+type="number"
+id="teamPoints${index}"
+value="${team.points}"
+placeholder="Punkty"
+>
+
+<button
+class="danger"
+onclick="deleteTeam(${index})"
+>
+Usuń
+</button>
+
+</div>
+
+`;
+
+});
+
+
+html+=`
+
+<button
+onclick="addTeam()"
+>
+➕ Dodaj zastęp
+</button>
+
+`;
+
+
+document.getElementById(
+"teamAdmin"
+).innerHTML=html;
+
+}
+
+
+function saveTeams(){
+
+data.teams.forEach((team,index)=>{
+
+const name=
+document.getElementById(
+"teamName"+index
+);
+
+const points=
+document.getElementById(
+"teamPoints"+index
+);
+
+
+if(name){
+
+team.name=name.value;
+
+}
+
+
+if(points){
+
+team.points=
+parseInt(points.value)||0;
+
+}
+
+});
+
+
+saveData();
+
+renderHome();
+
+renderRanking();
+
+renderTeamAdmin();
+
+alert(
+"Zastępy zostały zapisane."
+);
+
+}
+
+
+function addTeam(){
+
+data.teams.push({
+
+name:"Nowy zastęp",
+
+points:0
+
+});
+
+
+renderTeamAdmin();
+
+}
+
+
+function deleteTeam(index){
+
+if(
+confirm(
+"Czy na pewno usunąć ten zastęp?"
+)
+){
+
+data.teams.splice(index,1);
+
+renderTeamAdmin();
+
+}
+
+}
+
+
+/* =========================================================
+   PANEL KRONIKI
+========================================================= */
+
+function renderEventsAdmin(){
+
+let html="";
+
+
+data.events.forEach((event,index)=>{
+
+html+=`
+
+<div class="event-admin">
+
+<label>
+Tytuł wydarzenia
+</label>
+
+<input
+id="eventTitle${index}"
+value="${escapeAttribute(event.title)}"
+>
+
+
+<label>
+Data
+</label>
+
+<input
+id="eventDate${index}"
+value="${escapeAttribute(event.date)}"
+>
+
+
+<label>
+Opis
+</label>
+
+<textarea
+id="eventText${index}"
+>${escapeHTML(event.text)}</textarea>
+
+
+<button
+class="danger"
+onclick="deleteEvent(${index})"
+>
+Usuń wydarzenie
+</button>
+
+</div>
+
+`;
+
+});
+
+
+document.getElementById(
+"eventsAdmin"
+).innerHTML=html;
+
+}
+
+
+function saveEvents(){
+
+data.events.forEach((event,index)=>{
+
+event.title=
+document.getElementById(
+"eventTitle"+index
+).value;
+
+event.date=
+document.getElementById(
+"eventDate"+index
+).value;
+
+event.text=
+document.getElementById(
+"eventText"+index
+).value;
+
+});
+
+
+saveData();
+
+renderEvents();
+
+renderEventsAdmin();
+
+alert(
+"Kronika została zapisana."
+);
+
+}
+
+
+function addEventAdmin(){
+
+data.events.push({
+
+title:"Nowe wydarzenie",
+
+date:"2026",
+
+text:"Opis wydarzenia."
+
+});
+
+
+renderEventsAdmin();
+
+}
+
+
+function deleteEvent(index){
+
+if(
+confirm(
+"Czy na pewno usunąć wydarzenie?"
+)
+){
+
+data.events.splice(index,1);
+
+renderEventsAdmin();
+
+}
+
+}
+
+
+/* =========================================================
+   KALENDARZ
+========================================================= */
+
+function saveCalendar(){
+
+data.calendarText=
+document.getElementById(
+"editCalendarText"
+).value;
+
+data.calendarUrl=
+document.getElementById(
+"editCalendarUrl"
+).value;
+
+
+saveData();
+
+renderCalendar();
+
+alert(
+"Kalendarz został zapisany."
+);
+
+}
+
+
+/* =========================================================
+   ZDJĘCIA
+========================================================= */
+
+function savePhotos(){
+
+data.photos=[];
+
+
+for(let i=1;i<=6;i++){
+
+data.photos.push(
+
+document.getElementById(
+"photo"+i
+).value
+
+);
+
+}
+
+
+saveData();
+
+renderPhotos();
+
+alert(
+"Zdjęcia zostały zapisane."
+);
+
+}
+
+
+/* =========================================================
+   ZMIANA HASŁA
+========================================================= */
+
+function changePassword(){
+
+const newPassword=
+document.getElementById(
+"newPassword"
+).value;
+
+
+if(newPassword.length<4){
+
+alert(
+"Hasło musi mieć co najmniej 4 znaki."
+);
+
+return;
+
+}
+
+
+data.password=newPassword;
+
+saveData();
+
+
+document.getElementById(
+"newPassword"
+).value="";
+
+
+alert(
+"Hasło zostało zmienione."
+);
+
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetData(){
+
+if(
+confirm(
+"Czy na pewno chcesz przywrócić wszystkie ustawienia domyślne?"
+)
+){
+
+data=JSON.parse(
+JSON.stringify(defaultData)
+);
+
+
+saveData();
+
+
+renderHome();
+
+renderRanking();
+
+renderEvents();
+
+renderPhotos();
+
+renderCalendar();
+
+loadAdminData();
+
+
+alert(
+"Przywrócono ustawienia domyślne."
+);
+
+}
+
+}
+
+
+/* =========================================================
+   BEZPIECZNE WYŚWIETLANIE
+========================================================= */
+
+function escapeHTML(text){
+
+return String(text)
+
+.replace(/&/g,"&amp;")
+
+.replace(/</g,"&lt;")
+
+.replace(/>/g,"&gt;")
+
+.replace(/"/g,"&quot;")
+
+.replace(/'/g,"&#039;");
+
+}
+
+
+function escapeAttribute(text){
+
+return escapeHTML(text);
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+renderHome();
+
+renderRanking();
+
+renderEvents();
+
+renderPhotos();
+
+renderCalendar();
+
+</script>
+
+</body>
+
+</html>
