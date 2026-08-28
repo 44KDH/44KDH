@@ -10,7 +10,7 @@
 <title>44 KDH im. Baczyńskiego</title>
 
 <!-- =========================================================
-     FIREBASE
+     FIREBASE + REALTIME DATABASE
 ========================================================= -->
 
 <script type="module">
@@ -30,7 +30,9 @@ import {
     getDatabase,
     ref,
     onValue,
-    set
+    set,
+    push,
+    remove
 }
 from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
@@ -43,20 +45,26 @@ const firebaseConfig = {
 
     apiKey: "AIzaSyDeKbPJL5ivT1uLfANpZwwQaLsFl8KVop0",
 
-    authDomain: "strona-druzyny-1a3f3.firebaseapp.com",
-
-    projectId: "strona-druzyny-1a3f3",
-
-    storageBucket: "strona-druzyny-1a3f3.firebasestorage.app",
-
-    messagingSenderId: "193872495499",
-
-    appId: "1:193872495499:web:38231e4e44e2cb54d5e58e",
-
-    measurementId: "G-Q8QGH2RF03",
+    authDomain:
+        "strona-druzyny-1a3f3.firebaseapp.com",
 
     databaseURL:
-        "https://strona-druzyny-1a3f3-default-rtdb.firebaseio.com/"
+        "https://strona-druzyny-1a3f3-default-rtdb.firebaseio.com",
+
+    projectId:
+        "strona-druzyny-1a3f3",
+
+    storageBucket:
+        "strona-druzyny-1a3f3.firebasestorage.app",
+
+    messagingSenderId:
+        "193872495499",
+
+    appId:
+        "1:193872495499:web:38231e4e44e2cb54d5e58e",
+
+    measurementId:
+        "G-Q8QGH2RF03"
 
 };
 
@@ -84,10 +92,10 @@ const ADMIN_EMAIL =
 
 
 /* =========================================================
-   ZASTĘPY
+   DOMYŚLNE ZASTĘPY
 ========================================================= */
 
-let teams = [
+const defaultTeams = [
 
     {
         id: "lew",
@@ -116,13 +124,20 @@ let teams = [
 ];
 
 
+let teams = [...defaultTeams];
+
+
 /* =========================================================
-   ODCZYT PUNKTACJI Z REALTIME DATABASE
+   REFERENCJA DO BAZY
 ========================================================= */
 
 const teamsRef =
     ref(db, "teams");
 
+
+/* =========================================================
+   ODCZYT PUNKTACJI
+========================================================= */
 
 onValue(
 
@@ -134,25 +149,29 @@ onValue(
             snapshot.val();
 
 
-        if(data){
+        if (!data) {
 
-            teams.forEach(
-                team => {
+            teams =
+                [...defaultTeams];
 
-                    if(
-                        data[team.id] &&
-                        data[team.id].points !== undefined
-                    ){
+        }
 
-                        team.points =
-                            Number(
-                                data[team.id].points
-                            ) || 0;
+        else {
 
-                    }
+            teams =
+                Object.entries(data).map(
+                    ([id, team]) => ({
 
-                }
-            );
+                        id: id,
+
+                        name:
+                            team.name || "Bez nazwy",
+
+                        points:
+                            Number(team.points) || 0
+
+                    })
+                );
 
         }
 
@@ -168,11 +187,17 @@ onValue(
             error
         );
 
+        const errorBox =
+            document.getElementById(
+                "firebaseError"
+            );
 
-        document.getElementById(
-            "firebaseError"
-        ).innerHTML =
-        "Nie udało się połączyć z bazą punktacji.";
+        if (errorBox) {
+
+            errorBox.innerHTML =
+                "Nie udało się połączyć z bazą danych.";
+
+        }
 
     }
 
@@ -180,14 +205,14 @@ onValue(
 
 
 /* =========================================================
-   LOGOWANIE — STAN UŻYTKOWNIKA
+   LOGOWANIE / STAN UŻYTKOWNIKA
 ========================================================= */
 
 onAuthStateChanged(
 
     auth,
 
-    (user) => {
+    async (user) => {
 
         const adminPanel =
             document.getElementById(
@@ -205,26 +230,36 @@ onAuthStateChanged(
             );
 
 
-        if(
+        if (
             user &&
             user.email === ADMIN_EMAIL
-        ){
+        ) {
 
             loginBox.style.display =
                 "none";
 
             adminPanel.style.display =
                 "block";
-
 
             userInfo.innerHTML =
                 "Zalogowano jako: <strong>"
                 + user.email +
                 "</strong>";
 
+
+            /*
+             * Przy pierwszym logowaniu tworzymy
+             * cztery podstawowe zastępy, jeśli
+             * jeszcze ich nie ma w bazie.
+             */
+
+            await createDefaultTeamsIfNeeded();
+
+            renderAdminTeams();
+
         }
 
-        else{
+        else {
 
             loginBox.style.display =
                 "block";
@@ -232,8 +267,7 @@ onAuthStateChanged(
             adminPanel.style.display =
                 "none";
 
-            userInfo.innerHTML =
-                "";
+            userInfo.innerHTML = "";
 
         }
 
@@ -243,33 +277,98 @@ onAuthStateChanged(
 
 
 /* =========================================================
+   UTWORZENIE DOMYŚLNYCH ZASTĘPÓW
+========================================================= */
+
+async function createDefaultTeamsIfNeeded() {
+
+    const currentRef =
+        ref(db, "teams");
+
+    /*
+     * Nie nadpisujemy istniejących danych.
+     * Tworzymy tylko brakujące zastępy.
+     */
+
+    const promises = [];
+
+
+    defaultTeams.forEach(
+        team => {
+
+            if (
+                !teams.some(
+                    t => t.id === team.id
+                )
+            ) {
+
+                promises.push(
+
+                    set(
+
+                        ref(
+                            db,
+                            "teams/" + team.id
+                        ),
+
+                        {
+
+                            name:
+                                team.name,
+
+                            points:
+                                team.points
+
+                        }
+
+                    )
+
+                );
+
+            }
+
+        }
+    );
+
+
+    if (promises.length > 0) {
+
+        await Promise.all(
+            promises
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    LOGOWANIE KADRY
 ========================================================= */
 
 window.loginAdmin =
-async function(){
+async function() {
 
     const email =
         document
-        .getElementById(
-            "adminEmail"
-        )
-        .value
-        .trim();
-
+            .getElementById(
+                "adminEmail"
+            )
+            .value
+            .trim();
 
     const password =
         document
-        .getElementById(
-            "adminPassword"
-        )
-        .value;
+            .getElementById(
+                "adminPassword"
+            )
+            .value;
 
 
-    if(
+    if (
         !email ||
         !password
-    ){
+    ) {
 
         alert(
             "Wpisz email i hasło."
@@ -280,10 +379,10 @@ async function(){
     }
 
 
-    if(
+    if (
         email.toLowerCase() !==
         ADMIN_EMAIL.toLowerCase()
-    ){
+    ) {
 
         alert(
             "To konto nie ma uprawnień kadry."
@@ -294,7 +393,7 @@ async function(){
     }
 
 
-    try{
+    try {
 
         await signInWithEmailAndPassword(
             auth,
@@ -302,46 +401,20 @@ async function(){
             password
         );
 
-        document
-        .getElementById(
-            "adminPassword"
-        )
-        .value = "";
+        alert(
+            "Zalogowano do Panelu Kadry."
+        );
 
     }
 
-    catch(error){
+    catch(error) {
 
         console.error(error);
 
-
-        let message =
-            "Nie udało się zalogować.";
-
-
-        if(
-            error.code ===
-            "auth/invalid-credential"
-        ){
-
-            message =
-                "Nieprawidłowy email lub hasło.";
-
-        }
-
-
-        if(
-            error.code ===
-            "auth/too-many-requests"
-        ){
-
-            message =
-                "Zbyt wiele prób logowania. Spróbuj później.";
-
-        }
-
-
-        alert(message);
+        alert(
+            "Nie udało się zalogować.\n\n" +
+            "Sprawdź email i hasło."
+        );
 
     }
 
@@ -353,140 +426,63 @@ async function(){
 ========================================================= */
 
 window.logoutAdmin =
-async function(){
+async function() {
 
-    try{
+    try {
 
         await signOut(auth);
 
+        alert(
+            "Wylogowano."
+        );
+
     }
 
-    catch(error){
+    catch(error) {
 
         console.error(error);
+
+        alert(
+            "Nie udało się wylogować."
+        );
 
     }
 
 };
-
-
-/* =========================================================
-   SPRAWDZENIE UPRAWNIEŃ
-========================================================= */
-
-function isAdmin(){
-
-    const user =
-        auth.currentUser;
-
-
-    return(
-        user &&
-        user.email &&
-        user.email.toLowerCase() ===
-        ADMIN_EMAIL.toLowerCase()
-    );
-
-}
 
 
 /* =========================================================
    ZMIANA PUNKTÓW
 ========================================================= */
 
-window.changePoints =
-async function(
-    teamId,
-    amount
-){
+window.savePoints =
+async function(teamId) {
 
-    if(!isAdmin()){
-
-        alert(
-            "Musisz być zalogowany jako kadra."
-        );
-
-        return;
-
-    }
+    const user =
+        auth.currentUser;
 
 
-    const team =
-        teams.find(
-            t => t.id === teamId
-        );
-
-
-    if(!team){
-
-        return;
-
-    }
-
-
-    const newPoints =
-        team.points + Number(amount);
-
-
-    if(newPoints < 0){
-
-        alert(
-            "Punkty zastępu nie mogą być mniejsze niż 0."
-        );
-
-        return;
-
-    }
-
-
-    try{
-
-        await set(
-
-            ref(
-                db,
-                "teams/" + teamId
-            ),
-
-            {
-
-                name:
-                    team.name,
-
-                points:
-                    newPoints
-
-            }
-
-        );
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        alert(
-            "Nie udało się zapisać zmian."
-        );
-
-    }
-
-};
-
-
-/* =========================================================
-   USTAWIANIE KONKRETNEJ LICZBY PUNKTÓW
-========================================================= */
-
-window.setPoints =
-async function(teamId){
-
-    if(!isAdmin()){
+    if (
+        !user ||
+        user.email !== ADMIN_EMAIL
+    ) {
 
         alert(
             "Musisz być zalogowany jako kadra."
         );
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            "points-" + teamId
+        );
+
+
+    if (!input) {
 
         return;
 
@@ -494,26 +490,13 @@ async function(teamId){
 
 
     const value =
-        prompt(
-            "Podaj nową liczbę punktów:"
-        );
+        Number(input.value);
 
 
-    if(value === null){
-
-        return;
-
-    }
-
-
-    const points =
-        Number(value);
-
-
-    if(
-        !Number.isFinite(points) ||
-        points < 0
-    ){
+    if (
+        isNaN(value) ||
+        value < 0
+    ) {
 
         alert(
             "Podaj poprawną liczbę punktów."
@@ -530,14 +513,14 @@ async function(teamId){
         );
 
 
-    if(!team){
+    if (!team) {
 
         return;
 
     }
 
 
-    try{
+    try {
 
         await set(
 
@@ -552,15 +535,24 @@ async function(teamId){
                     team.name,
 
                 points:
-                    points
+                    value
 
             }
 
         );
 
+
+        alert(
+            "Zapisano " +
+            value +
+            " pkt dla zastępu " +
+            team.name +
+            "."
+        );
+
     }
 
-    catch(error){
+    catch(error) {
 
         console.error(error);
 
@@ -574,10 +566,353 @@ async function(teamId){
 
 
 /* =========================================================
+   ZMIANA NAZWY ZASTĘPU
+========================================================= */
+
+window.renameTeam =
+async function(teamId) {
+
+    const user =
+        auth.currentUser;
+
+
+    if (
+        !user ||
+        user.email !== ADMIN_EMAIL
+    ) {
+
+        alert(
+            "Musisz być zalogowany jako kadra."
+        );
+
+        return;
+
+    }
+
+
+    const team =
+        teams.find(
+            t => t.id === teamId
+        );
+
+
+    if (!team) {
+
+        return;
+
+    }
+
+
+    const newName =
+        prompt(
+            "Podaj nową nazwę zastępu:",
+            team.name
+        );
+
+
+    if (
+        newName === null
+    ) {
+
+        return;
+
+    }
+
+
+    const name =
+        newName.trim();
+
+
+    if (!name) {
+
+        alert(
+            "Nazwa nie może być pusta."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        await set(
+
+            ref(
+                db,
+                "teams/" + teamId
+            ),
+
+            {
+
+                name:
+                    name,
+
+                points:
+                    team.points
+
+            }
+
+        );
+
+
+        alert(
+            "Nazwa zastępu została zmieniona."
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Nie udało się zmienić nazwy."
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   USUWANIE ZASTĘPU
+========================================================= */
+
+window.deleteTeam =
+async function(teamId) {
+
+    const user =
+        auth.currentUser;
+
+
+    if (
+        !user ||
+        user.email !== ADMIN_EMAIL
+    ) {
+
+        alert(
+            "Musisz być zalogowany jako kadra."
+        );
+
+        return;
+
+    }
+
+
+    const team =
+        teams.find(
+            t => t.id === teamId
+        );
+
+
+    if (!team) {
+
+        return;
+
+    }
+
+
+    const confirmation =
+        confirm(
+            "Czy na pewno chcesz usunąć zastęp „"
+            + team.name
+            + "”?\n\n"
+            + "Spowoduje to usunięcie jego punktacji z bazy."
+        );
+
+
+    if (!confirmation) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await remove(
+
+            ref(
+                db,
+                "teams/" + teamId
+            )
+
+        );
+
+
+        alert(
+            "Zastęp „"
+            + team.name
+            + "” został usunięty."
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Nie udało się usunąć zastępu."
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   DODAWANIE ZASTĘPU
+========================================================= */
+
+window.addTeam =
+async function() {
+
+    const user =
+        auth.currentUser;
+
+
+    if (
+        !user ||
+        user.email !== ADMIN_EMAIL
+    ) {
+
+        alert(
+            "Musisz być zalogowany jako kadra."
+        );
+
+        return;
+
+    }
+
+
+    const nameInput =
+        document.getElementById(
+            "newTeamName"
+        );
+
+    const pointsInput =
+        document.getElementById(
+            "newTeamPoints"
+        );
+
+
+    const name =
+        nameInput.value.trim();
+
+    const points =
+        Number(
+            pointsInput.value
+        );
+
+
+    if (!name) {
+
+        alert(
+            "Wpisz nazwę zastępu."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        isNaN(points) ||
+        points < 0
+    ) {
+
+        alert(
+            "Podaj poprawną liczbę punktów."
+        );
+
+        return;
+
+    }
+
+
+    const duplicate =
+        teams.some(
+            team =>
+                team.name.toLowerCase() ===
+                name.toLowerCase()
+        );
+
+
+    if (duplicate) {
+
+        alert(
+            "Zastęp o takiej nazwie już istnieje."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        /*
+         * Firebase tworzy unikalne ID.
+         */
+
+        const newTeamRef =
+            push(
+                ref(db, "teams")
+            );
+
+
+        await set(
+
+            newTeamRef,
+
+            {
+
+                name:
+                    name,
+
+                points:
+                    points
+
+            }
+
+        );
+
+
+        nameInput.value =
+            "";
+
+        pointsInput.value =
+            "0";
+
+
+        alert(
+            "Dodano zastęp „"
+            + name
+            + "”."
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Nie udało się dodać zastępu."
+        );
+
+    }
+
+};
+
+
+/* =========================================================
    RANKING
 ========================================================= */
 
-function renderRanking(){
+function renderRanking() {
 
     const ranking =
         document.getElementById(
@@ -585,7 +920,7 @@ function renderRanking(){
         );
 
 
-    if(!ranking){
+    if (!ranking) {
 
         return;
 
@@ -602,19 +937,27 @@ function renderRanking(){
     let html = "";
 
 
+    if (sorted.length === 0) {
+
+        html =
+            "<p style='text-align:center;'>Brak zastępów.</p>";
+
+    }
+
+
     sorted.forEach(
         (team,index) => {
 
             let medal = "";
 
 
-            if(index === 0)
+            if (index === 0)
                 medal = "🥇";
 
-            if(index === 1)
+            if (index === 1)
                 medal = "🥈";
 
-            if(index === 2)
+            if (index === 2)
                 medal = "🥉";
 
 
@@ -632,7 +975,7 @@ function renderRanking(){
                             ${index + 1}.
                         </strong>
 
-                        ${team.name}
+                        ${escapeHtml(team.name)}
 
                     </div>
 
@@ -660,10 +1003,10 @@ function renderRanking(){
 
 
 /* =========================================================
-   PANEL KADRY — ZASTĘPY
+   PANEL KADRY
 ========================================================= */
 
-function renderAdminTeams(){
+function renderAdminTeams() {
 
     const container =
         document.getElementById(
@@ -671,97 +1014,91 @@ function renderAdminTeams(){
         );
 
 
-    if(!container){
+    if (!container) {
 
         return;
 
     }
 
 
+    if (teams.length === 0) {
+
+        container.innerHTML = `
+        
+            <div class="empty-admin">
+                Nie ma jeszcze żadnych zastępów.
+            </div>
+        
+        `;
+
+        return;
+
+    }
+
+
+    const sorted =
+        [...teams].sort(
+            (a,b) =>
+                b.points - a.points
+        );
+
+
     let html = "";
 
 
-    teams.forEach(
+    sorted.forEach(
         team => {
 
             html += `
 
                 <div class="admin-team">
 
-                    <div>
+                    <div class="admin-team-info">
 
                         <strong>
-                            ${team.name}
+                            ${escapeHtml(team.name)}
                         </strong>
-
-                        <br>
 
                         <span>
                             Aktualnie:
-                            ${team.points} pkt
+                            <b>${team.points} pkt</b>
                         </span>
 
                     </div>
 
 
-                    <div class="admin-buttons">
+                    <div class="points-editor">
+
+                        <input
+                            type="number"
+                            min="0"
+                            id="points-${team.id}"
+                            value="${team.points}"
+                        >
 
                         <button
-                            onclick="
-                                changePoints(
-                                    '${team.id}',
-                                    10
-                                )
-                            "
+                            onclick="savePoints('${team.id}')"
                         >
-                            +10
+                            💾 Zapisz
+                        </button>
+
+                    </div>
+
+
+                    <div class="admin-secondary-buttons">
+
+                        <button
+                            onclick="renameTeam('${team.id}')"
+                        >
+                            ✏️ Zmień nazwę
                         </button>
 
 
                         <button
-                            onclick="
-                                changePoints(
-                                    '${team.id}',
-                                    5
-                                )
-                            "
+                            class="delete-button"
+                            onclick="deleteTeam('${team.id}')"
                         >
-                            +5
-                        </button>
-
-
-                        <button
-                            onclick="
-                                changePoints(
-                                    '${team.id}',
-                                    -5
-                                )
-                            "
-                        >
-                            -5
-                        </button>
-
-
-                        <button
-                            onclick="
-                                changePoints(
-                                    '${team.id}',
-                                    -10
-                                )
-                            "
-                        >
-                            -10
-                        </button>
-
-
-                        <button
-                            onclick="
-                                setPoints(
-                                    '${team.id}'
-                                )
-                            "
-                        >
-                            Ustaw
+                            🗑️ Usuń
                         </button>
 
                     </div>
@@ -787,7 +1124,7 @@ function renderAdminTeams(){
 let chart = null;
 
 
-function updateChart(){
+function updateChart() {
 
     const canvas =
         document.getElementById(
@@ -795,14 +1132,7 @@ function updateChart(){
         );
 
 
-    if(!canvas){
-
-        return;
-
-    }
-
-
-    if(typeof Chart === "undefined"){
+    if (!canvas) {
 
         return;
 
@@ -821,7 +1151,7 @@ function updateChart(){
         );
 
 
-    if(chart){
+    if (chart) {
 
         chart.destroy();
 
@@ -838,12 +1168,10 @@ function updateChart(){
                 type:
                     "bar",
 
-
                 data: {
 
                     labels:
                         labels,
-
 
                     datasets: [
 
@@ -858,11 +1186,8 @@ function updateChart(){
                             backgroundColor: [
 
                                 "#3f7d20",
-
                                 "#6a994e",
-
                                 "#a68a64",
-
                                 "#5b3a1a"
 
                             ]
@@ -878,7 +1203,6 @@ function updateChart(){
 
                     responsive:
                         true,
-
 
                     plugins: {
 
@@ -911,6 +1235,42 @@ function updateChart(){
 
 }
 
+
+/* =========================================================
+   ZABEZPIECZENIE TEKSTU
+========================================================= */
+
+function escapeHtml(text) {
+
+    return String(text)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
 </script>
 
 <!-- =========================================================
@@ -927,36 +1287,27 @@ src="https://cdn.jsdelivr.net/npm/chart.js"
    PODSTAWOWE
 ========================================================= */
 
-*{
-
-box-sizing:
-border-box;
-
+* {
+    box-sizing: border-box;
 }
 
-
-html{
-
-scroll-behavior:
-smooth;
-
+html {
+    scroll-behavior: smooth;
 }
 
+body {
 
-body{
+    margin: 0;
 
-margin:
-0;
+    font-family:
+        Arial,
+        sans-serif;
 
-font-family:
-Arial,
-sans-serif;
+    background:
+        #f3f5f1;
 
-background:
-#f3f5f1;
-
-color:
-#222;
+    color:
+        #222;
 
 }
 
@@ -965,89 +1316,89 @@ color:
    NAWIGACJA
 ========================================================= */
 
-.navbar{
+.navbar {
 
-background:
-#2f5d3a;
+    background:
+        #2f5d3a;
 
-min-height:
-70px;
+    min-height:
+        70px;
 
-display:
-flex;
+    display:
+        flex;
 
-align-items:
-center;
+    align-items:
+        center;
 
-justify-content:
-center;
+    justify-content:
+        center;
 
-gap:
-5px;
+    gap:
+        5px;
 
-position:
-sticky;
+    position:
+        sticky;
 
-top:
-0;
+    top:
+        0;
 
-z-index:
-1000;
+    z-index:
+        1000;
 
-box-shadow:
-0 3px 10px
-rgba(0,0,0,0.25);
+    box-shadow:
+        0 3px 10px
+        rgba(0,0,0,0.25);
 
-flex-wrap:
-wrap;
-
-}
-
-
-.nav-btn{
-
-background:
-transparent;
-
-border:
-none;
-
-color:
-white;
-
-font-size:
-16px;
-
-font-weight:
-bold;
-
-padding:
-15px 18px;
-
-border-radius:
-6px;
-
-cursor:
-pointer;
-
-transition:
-0.3s;
+    flex-wrap:
+        wrap;
 
 }
 
 
-.nav-btn:hover{
+.nav-btn {
 
-background:
-#3d7a4a;
+    background:
+        transparent;
+
+    border:
+        none;
+
+    color:
+        white;
+
+    font-size:
+        16px;
+
+    font-weight:
+        bold;
+
+    padding:
+        15px 18px;
+
+    border-radius:
+        6px;
+
+    cursor:
+        pointer;
+
+    transition:
+        0.3s;
 
 }
 
 
-.nav-btn.active{
+.nav-btn:hover {
 
-background:
-#5b3a1a;
+    background:
+        #3d7a4a;
+
+}
+
+
+.nav-btn.active {
+
+    background:
+        #5b3a1a;
 
 }
 
@@ -1056,46 +1407,46 @@ background:
    ZAKŁADKI
 ========================================================= */
 
-.page{
+.page {
 
-display:
-none;
+    display:
+        none;
 
-animation:
-fadeIn 0.4s ease;
-
-}
-
-
-.page.active{
-
-display:
-block;
+    animation:
+        fadeIn 0.4s ease;
 
 }
 
 
-@keyframes fadeIn{
+.page.active {
 
-from{
-
-opacity:
-0;
-
-transform:
-translateY(10px);
+    display:
+        block;
 
 }
 
-to{
 
-opacity:
-1;
+@keyframes fadeIn {
 
-transform:
-translateY(0);
+    from {
 
-}
+        opacity:
+            0;
+
+        transform:
+            translateY(10px);
+
+    }
+
+    to {
+
+        opacity:
+            1;
+
+        transform:
+            translateY(0);
+
+    }
 
 }
 
@@ -1104,52 +1455,52 @@ translateY(0);
    BANER
 ========================================================= */
 
-.banner{
+.banner {
 
-height:
-420px;
+    height:
+        420px;
 
-background:
+    background:
 
-linear-gradient(
-rgba(0,0,0,0.45),
-rgba(0,0,0,0.45)
-),
+        linear-gradient(
+            rgba(0,0,0,0.45),
+            rgba(0,0,0,0.45)
+        ),
 
-url("baner.jpg");
+        url("baner.jpg");
 
-background-size:
-cover;
+    background-size:
+        cover;
 
-background-position:
-center;
+    background-position:
+        center;
 
-display:
-flex;
+    display:
+        flex;
 
-align-items:
-center;
+    align-items:
+        center;
 
-justify-content:
-center;
+    justify-content:
+        center;
 
-text-align:
-center;
+    text-align:
+        center;
 
-color:
-white;
+    color:
+        white;
 
-font-size:
-42px;
+    font-size:
+        42px;
 
-font-weight:
-bold;
+    font-weight:
+        bold;
 
-line-height:
-1.3;
+    line-height:
+        1.3;
 
-padding:
-20px;
+    padding:
+        20px;
 
 }
 
@@ -1158,35 +1509,35 @@ padding:
    SEKCJE
 ========================================================= */
 
-section{
+section {
 
-padding:
-50px 40px;
-
-}
-
-
-h2{
-
-text-align:
-center;
-
-color:
-#3e2f1c;
-
-font-size:
-30px;
-
-margin-bottom:
-35px;
+    padding:
+        50px 40px;
 
 }
 
 
-h3{
+h2 {
 
-color:
-#2f5d3a;
+    text-align:
+        center;
+
+    color:
+        #3e2f1c;
+
+    font-size:
+        30px;
+
+    margin-bottom:
+        35px;
+
+}
+
+
+h3 {
+
+    color:
+        #2f5d3a;
 
 }
 
@@ -1195,96 +1546,96 @@ color:
    DRUŻYNA
 ========================================================= */
 
-.about{
+.about {
 
-max-width:
-1000px;
+    max-width:
+        1000px;
 
-margin:
-auto;
+    margin:
+        auto;
 
-text-align:
-center;
+    text-align:
+        center;
 
-font-size:
-18px;
+    font-size:
+        18px;
 
-line-height:
-1.7;
-
-}
-
-
-.about p{
-
-margin-bottom:
-20px;
+    line-height:
+        1.7;
 
 }
 
 
-.info-boxes{
+.about p {
 
-max-width:
-1000px;
-
-margin:
-40px auto;
-
-display:
-grid;
-
-grid-template-columns:
-repeat(
-auto-fit,
-minmax(220px,1fr)
-);
-
-gap:
-20px;
+    margin-bottom:
+        20px;
 
 }
 
 
-.info-box{
+.info-boxes {
 
-background:
-white;
+    max-width:
+        1000px;
 
-padding:
-25px;
+    margin:
+        40px auto;
 
-border-radius:
-10px;
+    display:
+        grid;
 
-text-align:
-center;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(220px,1fr)
+        );
 
-box-shadow:
-0 5px 15px
-rgba(0,0,0,0.1);
-
-transition:
-0.3s;
-
-}
-
-
-.info-box:hover{
-
-transform:
-translateY(-5px);
+    gap:
+        20px;
 
 }
 
 
-.info-icon{
+.info-box {
 
-font-size:
-40px;
+    background:
+        white;
 
-margin-bottom:
-10px;
+    padding:
+        25px;
+
+    border-radius:
+        10px;
+
+    text-align:
+        center;
+
+    box-shadow:
+        0 5px 15px
+        rgba(0,0,0,0.1);
+
+    transition:
+        0.3s;
+
+}
+
+
+.info-box:hover {
+
+    transform:
+        translateY(-5px);
+
+}
+
+
+.info-icon {
+
+    font-size:
+        40px;
+
+    margin-bottom:
+        10px;
 
 }
 
@@ -1293,68 +1644,68 @@ margin-bottom:
    RANKING
 ========================================================= */
 
-.ranking{
+.ranking {
 
-max-width:
-700px;
+    max-width:
+        700px;
 
-margin:
-auto;
-
-}
-
-
-.rank{
-
-background:
-white;
-
-margin:
-12px 0;
-
-padding:
-18px 20px;
-
-border-radius:
-8px;
-
-display:
-flex;
-
-justify-content:
-space-between;
-
-align-items:
-center;
-
-font-size:
-19px;
-
-box-shadow:
-0 5px 10px
-rgba(0,0,0,0.1);
+    margin:
+        auto;
 
 }
 
 
-.medal{
+.rank {
 
-font-size:
-25px;
+    background:
+        white;
 
-margin-right:
-12px;
+    margin:
+        12px 0;
+
+    padding:
+        18px 20px;
+
+    border-radius:
+        8px;
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    font-size:
+        19px;
+
+    box-shadow:
+        0 5px 10px
+        rgba(0,0,0,0.1);
 
 }
 
 
-.points{
+.medal {
 
-font-weight:
-bold;
+    font-size:
+        25px;
 
-color:
-#5b3a1a;
+    margin-right:
+        12px;
+
+}
+
+
+.points {
+
+    font-weight:
+        bold;
+
+    color:
+        #5b3a1a;
 
 }
 
@@ -1363,26 +1714,26 @@ color:
    WYKRES
 ========================================================= */
 
-.chart-container{
+.chart-container {
 
-max-width:
-750px;
+    max-width:
+        750px;
 
-margin:
-40px auto;
+    margin:
+        40px auto;
 
-background:
-white;
+    background:
+        white;
 
-padding:
-25px;
+    padding:
+        25px;
 
-border-radius:
-10px;
+    border-radius:
+        10px;
 
-box-shadow:
-0 5px 10px
-rgba(0,0,0,0.08);
+    box-shadow:
+        0 5px 10px
+        rgba(0,0,0,0.08);
 
 }
 
@@ -1391,155 +1742,322 @@ rgba(0,0,0,0.08);
    PANEL KADRY
 ========================================================= */
 
-.panel{
+.panel {
 
-max-width:
-900px;
+    max-width:
+        1000px;
 
-margin:
-45px auto;
+    margin:
+        45px auto;
 
-background:
-#e8ece6;
+    background:
+        #e8ece6;
 
-padding:
-30px;
+    padding:
+        30px;
 
-border-radius:
-10px;
-
-}
-
-
-.login-box{
-
-text-align:
-center;
+    border-radius:
+        10px;
 
 }
 
 
-input{
+.login-box {
 
-padding:
-11px;
-
-margin:
-5px;
-
-border:
-1px solid #ccc;
-
-border-radius:
-5px;
+    text-align:
+        center;
 
 }
 
 
-button{
+input {
 
-background:
-#5b3a1a;
+    padding:
+        11px;
 
-color:
-white;
+    margin:
+        5px;
 
-border:
-none;
+    border:
+        1px solid #ccc;
 
-padding:
-9px 14px;
+    border-radius:
+        5px;
 
-border-radius:
-5px;
-
-cursor:
-pointer;
-
-font-weight:
-bold;
+    font-size:
+        15px;
 
 }
 
 
-button:hover{
+button {
 
-opacity:
-0.9;
+    background:
+        #5b3a1a;
 
-}
+    color:
+        white;
 
+    border:
+        none;
 
-.logout{
+    padding:
+        9px 14px;
 
-background:
-#8b2525;
+    border-radius:
+        5px;
 
-}
+    cursor:
+        pointer;
 
-
-.admin-team{
-
-background:
-white;
-
-padding:
-18px;
-
-margin:
-12px 0;
-
-border-radius:
-8px;
-
-display:
-flex;
-
-justify-content:
-space-between;
-
-align-items:
-center;
-
-gap:
-15px;
-
-box-shadow:
-0 3px 8px
-rgba(0,0,0,0.08);
+    font-weight:
+        bold;
 
 }
 
 
-.admin-buttons{
+button:hover {
 
-display:
-flex;
-
-gap:
-5px;
-
-flex-wrap:
-wrap;
+    opacity:
+        0.9;
 
 }
 
 
-.admin-buttons button{
+.logout {
 
-padding:
-8px 11px;
+    background:
+        #8b2525;
 
 }
 
 
-.user-info{
+.user-info {
 
-text-align:
-center;
+    text-align:
+        center;
 
-margin-bottom:
-20px;
+    margin-bottom:
+        20px;
+
+}
+
+
+/* =========================================================
+   ZARZĄDZANIE ZASTĘPAMI
+========================================================= */
+
+.admin-team {
+
+    background:
+        white;
+
+    padding:
+        20px;
+
+    margin:
+        15px 0;
+
+    border-radius:
+        8px;
+
+    box-shadow:
+        0 3px 8px
+        rgba(0,0,0,0.08);
+
+}
+
+
+.admin-team-info {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap:
+        15px;
+
+    margin-bottom:
+        15px;
+
+}
+
+
+.admin-team-info strong {
+
+    font-size:
+        20px;
+
+    color:
+        #2f5d3a;
+
+}
+
+
+.admin-team-info span {
+
+    color:
+        #555;
+
+}
+
+
+.points-editor {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    margin-bottom:
+        10px;
+
+}
+
+
+.points-editor input {
+
+    width:
+        150px;
+
+    font-size:
+        17px;
+
+}
+
+
+.points-editor button {
+
+    background:
+        #2f5d3a;
+
+}
+
+
+.admin-secondary-buttons {
+
+    display:
+        flex;
+
+    gap:
+        8px;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.admin-secondary-buttons button {
+
+    background:
+        #6b6b6b;
+
+}
+
+
+.admin-secondary-buttons
+.delete-button {
+
+    background:
+        #8b2525;
+
+}
+
+
+/* =========================================================
+   DODAWANIE ZASTĘPU
+========================================================= */
+
+.add-team-box {
+
+    background:
+        white;
+
+    margin-top:
+        35px;
+
+    padding:
+        25px;
+
+    border-radius:
+        10px;
+
+    border:
+        2px solid #2f5d3a;
+
+}
+
+
+.add-team-box h3 {
+
+    margin-top:
+        0;
+
+}
+
+
+.add-team-form {
+
+    display:
+        flex;
+
+    gap:
+        10px;
+
+    align-items:
+        center;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.add-team-form input {
+
+    flex:
+        1;
+
+    min-width:
+        180px;
+
+}
+
+
+.add-team-form button {
+
+    background:
+        #2f5d3a;
+
+    padding:
+        11px 18px;
+
+}
+
+
+.empty-admin {
+
+    background:
+        white;
+
+    padding:
+        25px;
+
+    border-radius:
+        8px;
+
+    text-align:
+        center;
 
 }
 
@@ -1548,83 +2066,83 @@ margin-bottom:
    AKORDEON
 ========================================================= */
 
-.accordion{
+.accordion {
 
-max-width:
-900px;
+    max-width:
+        900px;
 
-margin:
-50px auto;
-
-}
-
-
-.acc-btn{
-
-width:
-100%;
-
-padding:
-16px;
-
-margin-top:
-10px;
-
-background:
-#2f5d3a;
-
-color:
-white;
-
-border:
-none;
-
-text-align:
-left;
-
-font-size:
-16px;
-
-cursor:
-pointer;
-
-border-radius:
-6px;
+    margin:
+        50px auto;
 
 }
 
 
-.acc-content{
+.acc-btn {
 
-max-height:
-0;
+    width:
+        100%;
 
-overflow:
-hidden;
+    padding:
+        16px;
 
-background:
-white;
+    margin-top:
+        10px;
 
-padding:
-0 15px;
+    background:
+        #2f5d3a;
 
-border-radius:
-6px;
+    color:
+        white;
 
-transition:
-max-height 0.4s ease;
+    border:
+        none;
 
-box-shadow:
-0 5px 10px
-rgba(0,0,0,0.1);
+    text-align:
+        left;
+
+    font-size:
+        16px;
+
+    cursor:
+        pointer;
+
+    border-radius:
+        6px;
 
 }
 
 
-.acc-content.open{
+.acc-content {
 
-padding:
-15px;
+    max-height:
+        0;
+
+    overflow:
+        hidden;
+
+    background:
+        white;
+
+    padding:
+        0 15px;
+
+    border-radius:
+        6px;
+
+    transition:
+        max-height 0.4s ease;
+
+    box-shadow:
+        0 5px 10px
+        rgba(0,0,0,0.1);
+
+}
+
+
+.acc-content.open {
+
+    padding:
+        15px;
 
 }
 
@@ -1633,76 +2151,76 @@ padding:
    KRONIKA
 ========================================================= */
 
-.chronicle-intro{
+.chronicle-intro {
 
-max-width:
-900px;
+    max-width:
+        900px;
 
-margin:
-0 auto 40px;
+    margin:
+        0 auto 40px;
 
-text-align:
-center;
+    text-align:
+        center;
 
-font-size:
-18px;
+    font-size:
+        18px;
 
-line-height:
-1.7;
-
-}
-
-
-.events{
-
-max-width:
-900px;
-
-margin:
-60px auto;
+    line-height:
+        1.7;
 
 }
 
 
-.event{
+.events {
 
-background:
-white;
+    max-width:
+        900px;
 
-margin:
-15px 0;
-
-padding:
-20px;
-
-border-left:
-6px solid #2f5d3a;
-
-border-radius:
-7px;
-
-box-shadow:
-0 4px 10px
-rgba(0,0,0,0.08);
+    margin:
+        60px auto;
 
 }
 
 
-.event h3{
+.event {
 
-margin-top:
-0;
+    background:
+        white;
+
+    margin:
+        15px 0;
+
+    padding:
+        20px;
+
+    border-left:
+        6px solid #2f5d3a;
+
+    border-radius:
+        7px;
+
+    box-shadow:
+        0 4px 10px
+        rgba(0,0,0,0.08);
 
 }
 
 
-.event-date{
+.event h3 {
 
-font-weight:
-bold;
+    margin-top:
+        0;
 
-color:
-#5b3a1a;
+}
+
+
+.event-date {
+
+    font-weight:
+        bold;
+
+    color:
+        #5b3a1a;
 
 }
 
@@ -1711,63 +2229,63 @@ color:
    GALERIA
 ========================================================= */
 
-.gallery{
+.gallery {
 
-max-width:
-1100px;
+    max-width:
+        1100px;
 
-margin:
-auto;
+    margin:
+        auto;
 
-display:
-grid;
+    display:
+        grid;
 
-grid-template-columns:
-repeat(
-auto-fit,
-minmax(250px,1fr)
-);
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(250px,1fr)
+        );
 
-gap:
-18px;
-
-}
-
-
-.gallery-item{
-
-background:
-white;
-
-padding:
-8px;
-
-border-radius:
-10px;
-
-box-shadow:
-0 5px 12px
-rgba(0,0,0,0.12);
+    gap:
+        18px;
 
 }
 
 
-.gallery img{
+.gallery-item {
 
-width:
-100%;
+    background:
+        white;
 
-height:
-220px;
+    padding:
+        8px;
 
-object-fit:
-cover;
+    border-radius:
+        10px;
 
-border-radius:
-7px;
+    box-shadow:
+        0 5px 12px
+        rgba(0,0,0,0.12);
 
-display:
-block;
+}
+
+
+.gallery img {
+
+    width:
+        100%;
+
+    height:
+        220px;
+
+    object-fit:
+        cover;
+
+    border-radius:
+        7px;
+
+    display:
+        block;
 
 }
 
@@ -1776,54 +2294,54 @@ block;
    DOKUMENTY
 ========================================================= */
 
-.pdfs{
+.pdfs {
 
-display:
-flex;
+    display:
+        flex;
 
-flex-wrap:
-wrap;
+    flex-wrap:
+        wrap;
 
-justify-content:
-center;
+    justify-content:
+        center;
 
-gap:
-20px;
+    gap:
+        20px;
 
-margin-top:
-30px;
-
-}
-
-
-.pdf{
-
-background:
-white;
-
-padding:
-25px;
-
-border-radius:
-8px;
-
-box-shadow:
-0 5px 10px
-rgba(0,0,0,0.1);
-
-text-align:
-center;
-
-min-width:
-190px;
+    margin-top:
+        30px;
 
 }
 
 
-.pdf button{
+.pdf {
 
-margin-top:
-10px;
+    background:
+        white;
+
+    padding:
+        25px;
+
+    border-radius:
+        8px;
+
+    box-shadow:
+        0 5px 10px
+        rgba(0,0,0,0.1);
+
+    text-align:
+        center;
+
+    min-width:
+        190px;
+
+}
+
+
+.pdf button {
+
+    margin-top:
+        10px;
 
 }
 
@@ -1832,43 +2350,43 @@ margin-top:
    KALENDARZ
 ========================================================= */
 
-.calendar-container{
+.calendar-container {
 
-max-width:
-1200px;
+    max-width:
+        1200px;
 
-margin:
-auto;
+    margin:
+        auto;
 
-background:
-white;
+    background:
+        white;
 
-padding:
-15px;
+    padding:
+        15px;
 
-border-radius:
-10px;
+    border-radius:
+        10px;
 
-box-shadow:
-0 5px 15px
-rgba(0,0,0,0.1);
+    box-shadow:
+        0 5px 15px
+        rgba(0,0,0,0.1);
 
 }
 
 
-.calendar-container iframe{
+.calendar-container iframe {
 
-width:
-100%;
+    width:
+        100%;
 
-height:
-700px;
+    height:
+        700px;
 
-border:
-0;
+    border:
+        0;
 
-border-radius:
-8px;
+    border-radius:
+        8px;
 
 }
 
@@ -1877,39 +2395,39 @@ border-radius:
    STOPKA
 ========================================================= */
 
-.footer{
+.footer {
 
-background:
-#5b3a1a;
+    background:
+        #5b3a1a;
 
-color:
-white;
+    color:
+        white;
 
-text-align:
-center;
+    text-align:
+        center;
 
-padding:
-30px;
+    padding:
+        30px;
 
-margin-top:
-30px;
+    margin-top:
+        30px;
 
 }
 
 
-.footer a{
+.footer a {
 
-color:
-white;
+    color:
+        white;
 
-font-size:
-18px;
+    font-size:
+        18px;
 
-font-weight:
-bold;
+    font-weight:
+        bold;
 
-text-decoration:
-none;
+    text-decoration:
+        none;
 
 }
 
@@ -1918,71 +2436,120 @@ none;
    MOBILE
 ========================================================= */
 
-@media(max-width:700px){
+@media(max-width:700px) {
 
-.navbar{
+    .navbar {
 
-padding:
-8px;
+        padding:
+            8px;
 
-}
-
-
-.nav-btn{
-
-font-size:
-13px;
-
-padding:
-10px 8px;
-
-}
+    }
 
 
-.banner{
+    .nav-btn {
 
-height:
-320px;
+        font-size:
+            13px;
 
-font-size:
-27px;
+        padding:
+            10px 8px;
 
-}
-
-
-section{
-
-padding:
-35px 20px;
-
-}
+    }
 
 
-.rank{
+    .banner {
 
-font-size:
-16px;
+        height:
+            320px;
 
-}
+        font-size:
+            27px;
 
-
-.admin-team{
-
-flex-direction:
-column;
-
-align-items:
-flex-start;
-
-}
+    }
 
 
-.calendar-container iframe{
+    section {
 
-height:
-600px;
+        padding:
+            35px 20px;
 
-}
+    }
+
+
+    .rank {
+
+        font-size:
+            16px;
+
+    }
+
+
+    .admin-team-info {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+
+    }
+
+
+    .points-editor {
+
+        width:
+            100%;
+
+    }
+
+
+    .points-editor input {
+
+        width:
+            100%;
+
+        flex:
+            1;
+
+    }
+
+
+    .points-editor button {
+
+        white-space:
+            nowrap;
+
+    }
+
+
+    .add-team-form {
+
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+
+    }
+
+
+    .add-team-form input {
+
+        width:
+            100%;
+
+        margin:
+            5px 0;
+
+    }
+
+
+    .calendar-container iframe {
+
+        height:
+            600px;
+
+    }
 
 }
 
@@ -2622,17 +3189,6 @@ kalendarz wydarzeń drużyny.
 
 </p>
 
-<p>
-
-<strong>
-WAŻNE:
-</strong>
-aby kalendarz był widoczny
-dla wszystkich, Google Calendar
-musi być udostępniony publicznie.
-
-</p>
-
 </div>
 
 <div class="calendar-container">
@@ -2802,6 +3358,8 @@ class="page"
 ⚙️ Panel Kadry
 </h2>
 
+<!-- LOGOWANIE -->
+
 <div
 class="panel"
 id="loginBox"
@@ -2822,7 +3380,6 @@ wyłącznie dla kadry drużyny.
 type="email"
 id="adminEmail"
 placeholder="Email"
-autocomplete="username"
 
 >
 
@@ -2832,7 +3389,6 @@ autocomplete="username"
 type="password"
 id="adminPassword"
 placeholder="Hasło"
-autocomplete="current-password"
 
 >
 
@@ -2848,6 +3404,8 @@ Zaloguj </button>
 </div>
 
 </div>
+
+<!-- PANEL PO ZALOGOWANIU -->
 
 <div
 class="panel"
@@ -2879,19 +3437,59 @@ Wyloguj </button>
 
 <p>
 
-Tutaj kadra może zmieniać
-punktację zastępów.
-
-Zmiany zostaną zapisane
-w Firebase i będą widoczne
-dla wszystkich odwiedzających
-stronę.
+Wpisz bezpośrednio liczbę punktów,
+którą ma mieć dany zastęp, a następnie
+kliknij <strong>💾 Zapisz</strong>.
 
 </p>
 
 <div id="adminTeams">
-
 Ładowanie...
+</div>
+
+<!-- =====================================================
+     DODAWANIE ZASTĘPU
+===================================================== -->
+
+<div class="add-team-box">
+
+<h3>
+➕ Dodaj nowy zastęp
+</h3>
+
+<p>
+
+Nowy zastęp zostanie automatycznie
+dodany do rankingu i wykresu.
+
+</p>
+
+<div class="add-team-form">
+
+<input
+type="text"
+id="newTeamName"
+placeholder="Nazwa zastępu"
+
+>
+
+<input
+type="number"
+id="newTeamPoints"
+placeholder="Punkty"
+value="0"
+min="0"
+
+>
+
+<button
+onclick="addTeam()"
+
+>
+
+➕ Dodaj zastęp </button>
+
+</div>
 
 </div>
 
@@ -2921,7 +3519,7 @@ stronę.
 function showPage(
     pageId,
     button
-){
+) {
 
     document
         .querySelectorAll(".page")
@@ -2936,19 +3534,11 @@ function showPage(
         );
 
 
-    const selectedPage =
-        document.getElementById(
-            pageId
-        );
-
-
-    if(selectedPage){
-
-        selectedPage.classList.add(
+    document
+        .getElementById(pageId)
+        .classList.add(
             "active"
         );
-
-    }
 
 
     document
@@ -2964,13 +3554,9 @@ function showPage(
         );
 
 
-    if(button){
-
-        button.classList.add(
-            "active"
-        );
-
-    }
+    button.classList.add(
+        "active"
+    );
 
 
     window.scrollTo({
@@ -2991,104 +3577,72 @@ function showPage(
 ========================================================= */
 
 document
-.querySelectorAll(".acc-btn")
-.forEach(
+    .querySelectorAll(".acc-btn")
+    .forEach(
+        btn => {
 
-    btn => {
+            btn.addEventListener(
+                "click",
+                () => {
 
-        btn.addEventListener(
-
-            "click",
-
-            () => {
-
-                const content =
-                    btn.nextElementSibling;
+                    const content =
+                        btn.nextElementSibling;
 
 
-                document
-                .querySelectorAll(
-                    ".acc-content"
-                )
-                .forEach(
+                    document
+                        .querySelectorAll(
+                            ".acc-content"
+                        )
+                        .forEach(
+                            c => {
 
-                    c => {
+                                if (
+                                    c !== content
+                                ) {
 
-                        if(
-                            c !== content
-                        ){
+                                    c.style.maxHeight =
+                                        null;
 
-                            c.style.maxHeight =
-                                null;
+                                    c.classList.remove(
+                                        "open"
+                                    );
 
-                            c.classList.remove(
-                                "open"
-                            );
+                                }
 
-                        }
+                            }
+                        );
+
+
+                    if (
+                        content.style.maxHeight
+                    ) {
+
+                        content.style.maxHeight =
+                            null;
+
+                        content.classList.remove(
+                            "open"
+                        );
 
                     }
 
-                );
+                    else {
 
+                        content.style.maxHeight =
+                            content.scrollHeight
+                            + "px";
 
-                if(
-                    content.style.maxHeight
-                ){
+                        content.classList.add(
+                            "open"
+                        );
 
-                    content.style.maxHeight =
-                        null;
-
-                    content.classList.remove(
-                        "open"
-                    );
+                    }
 
                 }
-
-                else{
-
-                    content.style.maxHeight =
-                        content.scrollHeight
-                        + "px";
-
-                    content.classList.add(
-                        "open"
-                    );
-
-                }
-
-            }
-
-        );
-
-    }
-
-);
-
-
-/* =========================================================
-   ENTER W POLU HASŁA
-========================================================= */
-
-document
-.getElementById("adminPassword")
-.addEventListener(
-
-    "keydown",
-
-    function(event){
-
-        if(
-            event.key === "Enter"
-        ){
-
-            loginAdmin();
+            );
 
         }
-
-    }
-
-);
+    );
 
 
 </script>
