@@ -1,5 +1,5 @@
-
 <!DOCTYPE html>
+
 <html lang="pl">
 
 <head>
@@ -9,9 +9,9 @@
 
 <title>44 KDH im. Baczyńskiego</title>
 
-<!-- =========================
+<!-- =========================================================
      FIREBASE
-========================= -->
+========================================================= -->
 
 <script type="module">
 
@@ -27,56 +27,60 @@ import {
 from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
 import {
-    getFirestore,
-    collection,
-    doc,
-    setDoc,
-    onSnapshot
+    getDatabase,
+    ref,
+    onValue,
+    set
 }
-from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
 
 /* =========================================================
-   🔥 KONFIGURACJA FIREBASE
-
-   TU WSTAW DANE Z TWOJEGO PROJEKTU FIREBASE
+   KONFIGURACJA FIREBASE
 ========================================================= */
 
 const firebaseConfig = {
 
-    apiKey: "TUTAJ_WSTAW_API_KEY",
+    apiKey: "AIzaSyDeKbPJL5ivT1uLfANpZwwQaLsFl8KVop0",
 
-    authDomain: "TUTAJ.firebaseapp.com",
+    authDomain: "strona-druzyny-1a3f3.firebaseapp.com",
 
-    projectId: "TUTAJ",
+    projectId: "strona-druzyny-1a3f3",
 
-    storageBucket: "TUTAJ.firebasestorage.app",
+    storageBucket: "strona-druzyny-1a3f3.firebasestorage.app",
 
-    messagingSenderId: "TUTAJ",
+    messagingSenderId: "193872495499",
 
-    appId: "TUTAJ"
+    appId: "1:193872495499:web:38231e4e44e2cb54d5e58e",
+
+    measurementId: "G-Q8QGH2RF03",
+
+    databaseURL:
+        "https://strona-druzyny-1a3f3-default-rtdb.firebaseio.com/"
 
 };
 
 
-/* =========================
+/* =========================================================
    INICJALIZACJA
-========================= */
+========================================================= */
 
-const app = initializeApp(firebaseConfig);
+const app =
+    initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
+const auth =
+    getAuth(app);
 
-const db = getFirestore(app);
+const db =
+    getDatabase(app);
 
 
 /* =========================================================
-   ⚠️ EMAIL KADRY
-
-   WSTAW TUTAJ EMAIL KONTA KADRY
+   KONTO KADRY
 ========================================================= */
 
-const ADMIN_EMAIL = "kadry@44kdh.pl";
+const ADMIN_EMAIL =
+    "44kdh.baczynskiego@gmail.com";
 
 
 /* =========================================================
@@ -113,32 +117,44 @@ let teams = [
 
 
 /* =========================================================
-   ODCZYT PUNKTACJI Z FIRESTORE
+   ODCZYT PUNKTACJI Z REALTIME DATABASE
 ========================================================= */
 
-const teamsCollection = collection(db, "teams");
+const teamsRef =
+    ref(db, "teams");
 
 
-onSnapshot(
-    teamsCollection,
+onValue(
+
+    teamsRef,
+
     (snapshot) => {
 
-        snapshot.forEach((docSnap) => {
+        const data =
+            snapshot.val();
 
-            const data = docSnap.data();
 
-            const team = teams.find(
-                t => t.id === docSnap.id
+        if(data){
+
+            teams.forEach(
+                team => {
+
+                    if(
+                        data[team.id] &&
+                        data[team.id].points !== undefined
+                    ){
+
+                        team.points =
+                            Number(
+                                data[team.id].points
+                            ) || 0;
+
+                    }
+
+                }
             );
 
-            if (team) {
-
-                team.points =
-                    Number(data.points) || 0;
-
-            }
-
-        });
+        }
 
 
         renderRanking();
@@ -148,14 +164,15 @@ onSnapshot(
     (error) => {
 
         console.error(
-            "Błąd Firestore:",
+            "Błąd Realtime Database:",
             error
         );
+
 
         document.getElementById(
             "firebaseError"
         ).innerHTML =
-        "Nie udało się połączyć z bazą danych.";
+        "Nie udało się połączyć z bazą punktacji.";
 
     }
 
@@ -163,31 +180,42 @@ onSnapshot(
 
 
 /* =========================================================
-   LOGOWANIE
+   LOGOWANIE — STAN UŻYTKOWNIKA
 ========================================================= */
 
 onAuthStateChanged(
+
     auth,
+
     (user) => {
 
         const adminPanel =
-            document.getElementById("adminContent");
+            document.getElementById(
+                "adminContent"
+            );
 
         const loginBox =
-            document.getElementById("loginBox");
+            document.getElementById(
+                "loginBox"
+            );
 
         const userInfo =
-            document.getElementById("userInfo");
+            document.getElementById(
+                "userInfo"
+            );
 
 
-        if (
+        if(
             user &&
             user.email === ADMIN_EMAIL
-        ) {
+        ){
 
-            loginBox.style.display = "none";
+            loginBox.style.display =
+                "none";
 
-            adminPanel.style.display = "block";
+            adminPanel.style.display =
+                "block";
+
 
             userInfo.innerHTML =
                 "Zalogowano jako: <strong>"
@@ -196,17 +224,21 @@ onAuthStateChanged(
 
         }
 
-        else {
+        else{
 
-            loginBox.style.display = "block";
+            loginBox.style.display =
+                "block";
 
-            adminPanel.style.display = "none";
+            adminPanel.style.display =
+                "none";
 
-            userInfo.innerHTML = "";
+            userInfo.innerHTML =
+                "";
 
         }
 
     }
+
 );
 
 
@@ -214,20 +246,30 @@ onAuthStateChanged(
    LOGOWANIE KADRY
 ========================================================= */
 
-window.loginAdmin = async function(){
+window.loginAdmin =
+async function(){
 
     const email =
-        document.getElementById(
+        document
+        .getElementById(
             "adminEmail"
-        ).value.trim();
+        )
+        .value
+        .trim();
+
 
     const password =
-        document.getElementById(
+        document
+        .getElementById(
             "adminPassword"
-        ).value;
+        )
+        .value;
 
 
-    if (!email || !password) {
+    if(
+        !email ||
+        !password
+    ){
 
         alert(
             "Wpisz email i hasło."
@@ -238,7 +280,10 @@ window.loginAdmin = async function(){
     }
 
 
-    if (email !== ADMIN_EMAIL) {
+    if(
+        email.toLowerCase() !==
+        ADMIN_EMAIL.toLowerCase()
+    ){
 
         alert(
             "To konto nie ma uprawnień kadry."
@@ -249,7 +294,7 @@ window.loginAdmin = async function(){
     }
 
 
-    try {
+    try{
 
         await signInWithEmailAndPassword(
             auth,
@@ -257,20 +302,46 @@ window.loginAdmin = async function(){
             password
         );
 
-        alert(
-            "Zalogowano do Panelu Kadry."
-        );
+        document
+        .getElementById(
+            "adminPassword"
+        )
+        .value = "";
 
     }
 
-    catch(error) {
+    catch(error){
 
         console.error(error);
 
-        alert(
-            "Nie udało się zalogować.\n\n"
-            + "Sprawdź email i hasło."
-        );
+
+        let message =
+            "Nie udało się zalogować.";
+
+
+        if(
+            error.code ===
+            "auth/invalid-credential"
+        ){
+
+            message =
+                "Nieprawidłowy email lub hasło.";
+
+        }
+
+
+        if(
+            error.code ===
+            "auth/too-many-requests"
+        ){
+
+            message =
+                "Zbyt wiele prób logowania. Spróbuj później.";
+
+        }
+
+
+        alert(message);
 
     }
 
@@ -281,33 +352,55 @@ window.loginAdmin = async function(){
    WYLOGOWANIE
 ========================================================= */
 
-window.logoutAdmin = async function(){
+window.logoutAdmin =
+async function(){
 
-    await signOut(auth);
+    try{
 
-    alert(
-        "Wylogowano."
-    );
+        await signOut(auth);
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+    }
 
 };
+
+
+/* =========================================================
+   SPRAWDZENIE UPRAWNIEŃ
+========================================================= */
+
+function isAdmin(){
+
+    const user =
+        auth.currentUser;
+
+
+    return(
+        user &&
+        user.email &&
+        user.email.toLowerCase() ===
+        ADMIN_EMAIL.toLowerCase()
+    );
+
+}
 
 
 /* =========================================================
    ZMIANA PUNKTÓW
 ========================================================= */
 
-window.changePoints = async function(
+window.changePoints =
+async function(
     teamId,
     amount
 ){
 
-    const user = auth.currentUser;
-
-
-    if (
-        !user ||
-        user.email !== ADMIN_EMAIL
-    ) {
+    if(!isAdmin()){
 
         alert(
             "Musisz być zalogowany jako kadra."
@@ -324,7 +417,7 @@ window.changePoints = async function(
         );
 
 
-    if (!team) {
+    if(!team){
 
         return;
 
@@ -335,36 +428,41 @@ window.changePoints = async function(
         team.points + Number(amount);
 
 
-    try {
+    if(newPoints < 0){
 
-        await setDoc(
+        alert(
+            "Punkty zastępu nie mogą być mniejsze niż 0."
+        );
 
-            doc(
+        return;
+
+    }
+
+
+    try{
+
+        await set(
+
+            ref(
                 db,
-                "teams",
-                teamId
+                "teams/" + teamId
             ),
 
             {
 
-                name: team.name,
+                name:
+                    team.name,
 
-                points: newPoints
+                points:
+                    newPoints
 
             }
 
         );
 
-
-        alert(
-            "Zmieniono punktację zastępu "
-            + team.name
-            + "."
-        );
-
     }
 
-    catch(error) {
+    catch(error){
 
         console.error(error);
 
@@ -381,15 +479,10 @@ window.changePoints = async function(
    USTAWIANIE KONKRETNEJ LICZBY PUNKTÓW
 ========================================================= */
 
-window.setPoints = async function(teamId){
+window.setPoints =
+async function(teamId){
 
-    const user = auth.currentUser;
-
-
-    if (
-        !user ||
-        user.email !== ADMIN_EMAIL
-    ) {
+    if(!isAdmin()){
 
         alert(
             "Musisz być zalogowany jako kadra."
@@ -406,7 +499,7 @@ window.setPoints = async function(teamId){
         );
 
 
-    if (value === null) {
+    if(value === null){
 
         return;
 
@@ -417,10 +510,10 @@ window.setPoints = async function(teamId){
         Number(value);
 
 
-    if (
-        isNaN(points) ||
+    if(
+        !Number.isFinite(points) ||
         points < 0
-    ) {
+    ){
 
         alert(
             "Podaj poprawną liczbę punktów."
@@ -437,46 +530,42 @@ window.setPoints = async function(teamId){
         );
 
 
-    if (!team) {
+    if(!team){
 
         return;
 
     }
 
 
-    try {
+    try{
 
-        await setDoc(
+        await set(
 
-            doc(
+            ref(
                 db,
-                "teams",
-                teamId
+                "teams/" + teamId
             ),
 
             {
 
-                name: team.name,
+                name:
+                    team.name,
 
-                points: points
+                points:
+                    points
 
             }
 
         );
 
-
-        alert(
-            "Punkty zapisane."
-        );
-
     }
 
-    catch(error) {
+    catch(error){
 
         console.error(error);
 
         alert(
-            "Błąd zapisu."
+            "Nie udało się zapisać punktów."
         );
 
     }
@@ -494,6 +583,13 @@ function renderRanking(){
         document.getElementById(
             "ranking"
         );
+
+
+    if(!ranking){
+
+        return;
+
+    }
 
 
     const sorted =
@@ -524,27 +620,27 @@ function renderRanking(){
 
             html += `
 
-            <div class="rank">
+                <div class="rank">
 
-                <div>
+                    <div>
 
-                    <span class="medal">
-                        ${medal}
+                        <span class="medal">
+                            ${medal}
+                        </span>
+
+                        <strong>
+                            ${index + 1}.
+                        </strong>
+
+                        ${team.name}
+
+                    </div>
+
+                    <span class="points">
+                        ${team.points} pkt
                     </span>
 
-                    <strong>
-                        ${index + 1}.
-                    </strong>
-
-                    ${team.name}
-
                 </div>
-
-                <span class="points">
-                    ${team.points} pkt
-                </span>
-
-            </div>
 
             `;
 
@@ -590,77 +686,87 @@ function renderAdminTeams(){
 
             html += `
 
-            <div class="admin-team">
+                <div class="admin-team">
 
-                <div>
+                    <div>
 
-                    <strong>
-                        ${team.name}
-                    </strong>
+                        <strong>
+                            ${team.name}
+                        </strong>
 
-                    <br>
+                        <br>
 
-                    <span>
-                        Aktualnie:
-                        ${team.points} pkt
-                    </span>
+                        <span>
+                            Aktualnie:
+                            ${team.points} pkt
+                        </span>
 
-                </div>
-
-
-                <div class="admin-buttons">
-
-                    <button
-                        onclick="changePoints(
-                            '${team.id}',
-                            10
-                        )"
-                    >
-                        +10
-                    </button>
+                    </div>
 
 
-                    <button
-                        onclick="changePoints(
-                            '${team.id}',
-                            5
-                        )"
-                    >
-                        +5
-                    </button>
+                    <div class="admin-buttons">
+
+                        <button
+                            onclick="
+                                changePoints(
+                                    '${team.id}',
+                                    10
+                                )
+                            "
+                        >
+                            +10
+                        </button>
 
 
-                    <button
-                        onclick="changePoints(
-                            '${team.id}',
+                        <button
+                            onclick="
+                                changePoints(
+                                    '${team.id}',
+                                    5
+                                )
+                            "
+                        >
+                            +5
+                        </button>
+
+
+                        <button
+                            onclick="
+                                changePoints(
+                                    '${team.id}',
+                                    -5
+                                )
+                            "
+                        >
                             -5
-                        )"
-                    >
-                        -5
-                    </button>
+                        </button>
 
 
-                    <button
-                        onclick="changePoints(
-                            '${team.id}',
+                        <button
+                            onclick="
+                                changePoints(
+                                    '${team.id}',
+                                    -10
+                                )
+                            "
+                        >
                             -10
-                        )"
-                    >
-                        -10
-                    </button>
+                        </button>
 
 
-                    <button
-                        onclick="setPoints(
-                            '${team.id}'
-                        )"
-                    >
-                        Ustaw
-                    </button>
+                        <button
+                            onclick="
+                                setPoints(
+                                    '${team.id}'
+                                )
+                            "
+                        >
+                            Ustaw
+                        </button>
+
+                    </div>
 
                 </div>
-
-            </div>
 
             `;
 
@@ -696,6 +802,13 @@ function updateChart(){
     }
 
 
+    if(typeof Chart === "undefined"){
+
+        return;
+
+    }
+
+
     const labels =
         teams.map(
             t => t.name
@@ -715,65 +828,78 @@ function updateChart(){
     }
 
 
-    chart = new Chart(
+    chart =
+        new Chart(
 
-        canvas,
+            canvas,
 
-        {
+            {
 
-            type: "bar",
-
-            data: {
-
-                labels: labels,
-
-                datasets: [
-
-                    {
-
-                        label: "Punkty",
-
-                        data: data,
-
-                        backgroundColor: [
-
-                            "#3f7d20",
-
-                            "#6a994e",
-
-                            "#a68a64",
-
-                            "#5b3a1a"
-
-                        ]
-
-                    }
-
-                ]
-
-            },
+                type:
+                    "bar",
 
 
-            options: {
+                data: {
 
-                responsive: true,
+                    labels:
+                        labels,
 
-                plugins: {
 
-                    legend: {
+                    datasets: [
 
-                        display: false
+                        {
 
-                    }
+                            label:
+                                "Punkty",
+
+                            data:
+                                data,
+
+                            backgroundColor: [
+
+                                "#3f7d20",
+
+                                "#6a994e",
+
+                                "#a68a64",
+
+                                "#5b3a1a"
+
+                            ]
+
+                        }
+
+                    ]
 
                 },
 
 
-                scales: {
+                options: {
 
-                    y: {
+                    responsive:
+                        true,
 
-                        beginAtZero: true
+
+                    plugins: {
+
+                        legend: {
+
+                            display:
+                                false
+
+                        }
+
+                    },
+
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero:
+                                true
+
+                        }
 
                     }
 
@@ -781,19 +907,19 @@ function updateChart(){
 
             }
 
-        }
-
-    );
+        );
 
 }
 
 </script>
 
+<!-- =========================================================
+     CHART.JS
+========================================================= -->
 
-<!-- CHART.JS -->
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script
+src="https://cdn.jsdelivr.net/npm/chart.js"
+></script>
 
 <style>
 
@@ -802,24 +928,35 @@ function updateChart(){
 ========================================================= */
 
 *{
-box-sizing:border-box;
+
+box-sizing:
+border-box;
+
 }
 
+
 html{
-scroll-behavior:smooth;
+
+scroll-behavior:
+smooth;
+
 }
+
 
 body{
 
-margin:0;
+margin:
+0;
 
 font-family:
 Arial,
 sans-serif;
 
-background:#f3f5f1;
+background:
+#f3f5f1;
 
-color:#222;
+color:
+#222;
 
 }
 
@@ -830,66 +967,87 @@ color:#222;
 
 .navbar{
 
-background:#2f5d3a;
+background:
+#2f5d3a;
 
-min-height:70px;
+min-height:
+70px;
 
-display:flex;
+display:
+flex;
 
-align-items:center;
+align-items:
+center;
 
-justify-content:center;
+justify-content:
+center;
 
-gap:5px;
+gap:
+5px;
 
-position:sticky;
+position:
+sticky;
 
-top:0;
+top:
+0;
 
-z-index:1000;
+z-index:
+1000;
 
 box-shadow:
 0 3px 10px
 rgba(0,0,0,0.25);
 
-flex-wrap:wrap;
+flex-wrap:
+wrap;
 
 }
 
 
 .nav-btn{
 
-background:transparent;
+background:
+transparent;
 
-border:none;
+border:
+none;
 
-color:white;
+color:
+white;
 
-font-size:16px;
+font-size:
+16px;
 
-font-weight:bold;
+font-weight:
+bold;
 
-padding:15px 18px;
+padding:
+15px 18px;
 
-border-radius:6px;
+border-radius:
+6px;
 
-cursor:pointer;
+cursor:
+pointer;
 
-transition:0.3s;
+transition:
+0.3s;
 
 }
 
 
 .nav-btn:hover{
 
-background:#3d7a4a;
+background:
+#3d7a4a;
 
 }
 
 
 .nav-btn.active{
 
-background:#5b3a1a;
+background:
+#5b3a1a;
 
 }
 
@@ -900,7 +1058,8 @@ background:#5b3a1a;
 
 .page{
 
-display:none;
+display:
+none;
 
 animation:
 fadeIn 0.4s ease;
@@ -910,7 +1069,8 @@ fadeIn 0.4s ease;
 
 .page.active{
 
-display:block;
+display:
+block;
 
 }
 
@@ -919,7 +1079,8 @@ display:block;
 
 from{
 
-opacity:0;
+opacity:
+0;
 
 transform:
 translateY(10px);
@@ -928,7 +1089,8 @@ translateY(10px);
 
 to{
 
-opacity:1;
+opacity:
+1;
 
 transform:
 translateY(0);
@@ -944,7 +1106,8 @@ translateY(0);
 
 .banner{
 
-height:420px;
+height:
+420px;
 
 background:
 
@@ -955,27 +1118,38 @@ rgba(0,0,0,0.45)
 
 url("baner.jpg");
 
-background-size:cover;
+background-size:
+cover;
 
-background-position:center;
+background-position:
+center;
 
-display:flex;
+display:
+flex;
 
-align-items:center;
+align-items:
+center;
 
-justify-content:center;
+justify-content:
+center;
 
-text-align:center;
+text-align:
+center;
 
-color:white;
+color:
+white;
 
-font-size:42px;
+font-size:
+42px;
 
-font-weight:bold;
+font-weight:
+bold;
 
-line-height:1.3;
+line-height:
+1.3;
 
-padding:20px;
+padding:
+20px;
 
 }
 
@@ -994,20 +1168,25 @@ padding:
 
 h2{
 
-text-align:center;
+text-align:
+center;
 
-color:#3e2f1c;
+color:
+#3e2f1c;
 
-font-size:30px;
+font-size:
+30px;
 
-margin-bottom:35px;
+margin-bottom:
+35px;
 
 }
 
 
 h3{
 
-color:#2f5d3a;
+color:
+#2f5d3a;
 
 }
 
@@ -1018,33 +1197,42 @@ color:#2f5d3a;
 
 .about{
 
-max-width:1000px;
+max-width:
+1000px;
 
-margin:auto;
+margin:
+auto;
 
-text-align:center;
+text-align:
+center;
 
-font-size:18px;
+font-size:
+18px;
 
-line-height:1.7;
+line-height:
+1.7;
 
 }
 
 
 .about p{
 
-margin-bottom:20px;
+margin-bottom:
+20px;
 
 }
 
 
 .info-boxes{
 
-max-width:1000px;
+max-width:
+1000px;
 
-margin:40px auto;
+margin:
+40px auto;
 
-display:grid;
+display:
+grid;
 
 grid-template-columns:
 repeat(
@@ -1052,26 +1240,32 @@ auto-fit,
 minmax(220px,1fr)
 );
 
-gap:20px;
+gap:
+20px;
 
 }
 
 
 .info-box{
 
-background:white;
+background:
+white;
 
-padding:25px;
+padding:
+25px;
 
-border-radius:10px;
+border-radius:
+10px;
 
-text-align:center;
+text-align:
+center;
 
 box-shadow:
 0 5px 15px
 rgba(0,0,0,0.1);
 
-transition:0.3s;
+transition:
+0.3s;
 
 }
 
@@ -1086,9 +1280,11 @@ translateY(-5px);
 
 .info-icon{
 
-font-size:40px;
+font-size:
+40px;
 
-margin-bottom:10px;
+margin-bottom:
+10px;
 
 }
 
@@ -1099,30 +1295,40 @@ margin-bottom:10px;
 
 .ranking{
 
-max-width:700px;
+max-width:
+700px;
 
-margin:auto;
+margin:
+auto;
 
 }
 
 
 .rank{
 
-background:white;
+background:
+white;
 
-margin:12px 0;
+margin:
+12px 0;
 
-padding:18px 20px;
+padding:
+18px 20px;
 
-border-radius:8px;
+border-radius:
+8px;
 
-display:flex;
+display:
+flex;
 
-justify-content:space-between;
+justify-content:
+space-between;
 
-align-items:center;
+align-items:
+center;
 
-font-size:19px;
+font-size:
+19px;
 
 box-shadow:
 0 5px 10px
@@ -1133,18 +1339,22 @@ rgba(0,0,0,0.1);
 
 .medal{
 
-font-size:25px;
+font-size:
+25px;
 
-margin-right:12px;
+margin-right:
+12px;
 
 }
 
 
 .points{
 
-font-weight:bold;
+font-weight:
+bold;
 
-color:#5b3a1a;
+color:
+#5b3a1a;
 
 }
 
@@ -1155,15 +1365,20 @@ color:#5b3a1a;
 
 .chart-container{
 
-max-width:750px;
+max-width:
+750px;
 
-margin:40px auto;
+margin:
+40px auto;
 
-background:white;
+background:
+white;
 
-padding:25px;
+padding:
+25px;
 
-border-radius:10px;
+border-radius:
+10px;
 
 box-shadow:
 0 5px 10px
@@ -1178,90 +1393,116 @@ rgba(0,0,0,0.08);
 
 .panel{
 
-max-width:900px;
+max-width:
+900px;
 
-margin:45px auto;
+margin:
+45px auto;
 
-background:#e8ece6;
+background:
+#e8ece6;
 
-padding:30px;
+padding:
+30px;
 
-border-radius:10px;
+border-radius:
+10px;
 
 }
 
 
 .login-box{
 
-text-align:center;
+text-align:
+center;
 
 }
 
 
 input{
 
-padding:11px;
+padding:
+11px;
 
-margin:5px;
+margin:
+5px;
 
 border:
 1px solid #ccc;
 
-border-radius:5px;
+border-radius:
+5px;
 
 }
 
 
 button{
 
-background:#5b3a1a;
+background:
+#5b3a1a;
 
-color:white;
+color:
+white;
 
-border:none;
+border:
+none;
 
-padding:9px 14px;
+padding:
+9px 14px;
 
-border-radius:5px;
+border-radius:
+5px;
 
-cursor:pointer;
+cursor:
+pointer;
 
-font-weight:bold;
+font-weight:
+bold;
 
 }
 
 
 button:hover{
 
-opacity:0.9;
+opacity:
+0.9;
 
 }
 
 
 .logout{
 
-background:#8b2525;
+background:
+#8b2525;
 
 }
 
 
 .admin-team{
 
-background:white;
+background:
+white;
 
-padding:18px;
+padding:
+18px;
 
-margin:12px 0;
+margin:
+12px 0;
 
-border-radius:8px;
+border-radius:
+8px;
 
-display:flex;
+display:
+flex;
 
-justify-content:space-between;
+justify-content:
+space-between;
 
-align-items:center;
+align-items:
+center;
 
-gap:15px;
+gap:
+15px;
 
 box-shadow:
 0 3px 8px
@@ -1272,11 +1513,14 @@ rgba(0,0,0,0.08);
 
 .admin-buttons{
 
-display:flex;
+display:
+flex;
 
-gap:5px;
+gap:
+5px;
 
-flex-wrap:wrap;
+flex-wrap:
+wrap;
 
 }
 
@@ -1291,9 +1535,11 @@ padding:
 
 .user-info{
 
-text-align:center;
+text-align:
+center;
 
-margin-bottom:20px;
+margin-bottom:
+20px;
 
 }
 
@@ -1304,49 +1550,66 @@ margin-bottom:20px;
 
 .accordion{
 
-max-width:900px;
+max-width:
+900px;
 
-margin:50px auto;
+margin:
+50px auto;
 
 }
 
 
 .acc-btn{
 
-width:100%;
+width:
+100%;
 
-padding:16px;
+padding:
+16px;
 
-margin-top:10px;
+margin-top:
+10px;
 
-background:#2f5d3a;
+background:
+#2f5d3a;
 
-color:white;
+color:
+white;
 
-border:none;
+border:
+none;
 
-text-align:left;
+text-align:
+left;
 
-font-size:16px;
+font-size:
+16px;
 
-cursor:pointer;
+cursor:
+pointer;
 
-border-radius:6px;
+border-radius:
+6px;
 
 }
 
 
 .acc-content{
 
-max-height:0;
+max-height:
+0;
 
-overflow:hidden;
+overflow:
+hidden;
 
-background:white;
+background:
+white;
 
-padding:0 15px;
+padding:
+0 15px;
 
-border-radius:6px;
+border-radius:
+6px;
 
 transition:
 max-height 0.4s ease;
@@ -1360,7 +1623,8 @@ rgba(0,0,0,0.1);
 
 .acc-content.open{
 
-padding:15px;
+padding:
+15px;
 
 }
 
@@ -1371,41 +1635,51 @@ padding:15px;
 
 .chronicle-intro{
 
-max-width:900px;
+max-width:
+900px;
 
 margin:
 0 auto 40px;
 
-text-align:center;
+text-align:
+center;
 
-font-size:18px;
+font-size:
+18px;
 
-line-height:1.7;
+line-height:
+1.7;
 
 }
 
 
 .events{
 
-max-width:900px;
+max-width:
+900px;
 
-margin:60px auto;
+margin:
+60px auto;
 
 }
 
 
 .event{
 
-background:white;
+background:
+white;
 
-margin:15px 0;
+margin:
+15px 0;
 
-padding:20px;
+padding:
+20px;
 
 border-left:
 6px solid #2f5d3a;
 
-border-radius:7px;
+border-radius:
+7px;
 
 box-shadow:
 0 4px 10px
@@ -1416,16 +1690,19 @@ rgba(0,0,0,0.08);
 
 .event h3{
 
-margin-top:0;
+margin-top:
+0;
 
 }
 
 
 .event-date{
 
-font-weight:bold;
+font-weight:
+bold;
 
-color:#5b3a1a;
+color:
+#5b3a1a;
 
 }
 
@@ -1436,11 +1713,14 @@ color:#5b3a1a;
 
 .gallery{
 
-max-width:1100px;
+max-width:
+1100px;
 
-margin:auto;
+margin:
+auto;
 
-display:grid;
+display:
+grid;
 
 grid-template-columns:
 repeat(
@@ -1448,18 +1728,22 @@ auto-fit,
 minmax(250px,1fr)
 );
 
-gap:18px;
+gap:
+18px;
 
 }
 
 
 .gallery-item{
 
-background:white;
+background:
+white;
 
-padding:8px;
+padding:
+8px;
 
-border-radius:10px;
+border-radius:
+10px;
 
 box-shadow:
 0 5px 12px
@@ -1470,15 +1754,20 @@ rgba(0,0,0,0.12);
 
 .gallery img{
 
-width:100%;
+width:
+100%;
 
-height:220px;
+height:
+220px;
 
-object-fit:cover;
+object-fit:
+cover;
 
-border-radius:7px;
+border-radius:
+7px;
 
-display:block;
+display:
+block;
 
 }
 
@@ -1489,41 +1778,52 @@ display:block;
 
 .pdfs{
 
-display:flex;
+display:
+flex;
 
-flex-wrap:wrap;
+flex-wrap:
+wrap;
 
-justify-content:center;
+justify-content:
+center;
 
-gap:20px;
+gap:
+20px;
 
-margin-top:30px;
+margin-top:
+30px;
 
 }
 
 
 .pdf{
 
-background:white;
+background:
+white;
 
-padding:25px;
+padding:
+25px;
 
-border-radius:8px;
+border-radius:
+8px;
 
 box-shadow:
 0 5px 10px
 rgba(0,0,0,0.1);
 
-text-align:center;
+text-align:
+center;
 
-min-width:190px;
+min-width:
+190px;
 
 }
 
 
 .pdf button{
 
-margin-top:10px;
+margin-top:
+10px;
 
 }
 
@@ -1534,15 +1834,20 @@ margin-top:10px;
 
 .calendar-container{
 
-max-width:1200px;
+max-width:
+1200px;
 
-margin:auto;
+margin:
+auto;
 
-background:white;
+background:
+white;
 
-padding:15px;
+padding:
+15px;
 
-border-radius:10px;
+border-radius:
+10px;
 
 box-shadow:
 0 5px 15px
@@ -1553,13 +1858,17 @@ rgba(0,0,0,0.1);
 
 .calendar-container iframe{
 
-width:100%;
+width:
+100%;
 
-height:700px;
+height:
+700px;
 
-border:0;
+border:
+0;
 
-border-radius:8px;
+border-radius:
+8px;
 
 }
 
@@ -1570,28 +1879,37 @@ border-radius:8px;
 
 .footer{
 
-background:#5b3a1a;
+background:
+#5b3a1a;
 
-color:white;
+color:
+white;
 
-text-align:center;
+text-align:
+center;
 
-padding:30px;
+padding:
+30px;
 
-margin-top:30px;
+margin-top:
+30px;
 
 }
 
 
 .footer a{
 
-color:white;
+color:
+white;
 
-font-size:18px;
+font-size:
+18px;
 
-font-weight:bold;
+font-weight:
+bold;
 
-text-decoration:none;
+text-decoration:
+none;
 
 }
 
@@ -1604,14 +1922,16 @@ text-decoration:none;
 
 .navbar{
 
-padding:8px;
+padding:
+8px;
 
 }
 
 
 .nav-btn{
 
-font-size:13px;
+font-size:
+13px;
 
 padding:
 10px 8px;
@@ -1621,9 +1941,11 @@ padding:
 
 .banner{
 
-height:320px;
+height:
+320px;
 
-font-size:27px;
+font-size:
+27px;
 
 }
 
@@ -1638,23 +1960,27 @@ padding:
 
 .rank{
 
-font-size:16px;
+font-size:
+16px;
 
 }
 
 
 .admin-team{
 
-flex-direction:column;
+flex-direction:
+column;
 
-align-items:flex-start;
+align-items:
+flex-start;
 
 }
 
 
 .calendar-container iframe{
 
-height:600px;
+height:
+600px;
 
 }
 
@@ -1664,9 +1990,7 @@ height:600px;
 
 </head>
 
-
 <body>
-
 
 <!-- =========================================================
      NAWIGACJA
@@ -1677,52 +2001,52 @@ height:600px;
 <button
 class="nav-btn active"
 onclick="showPage('home',this)"
->
-🏕️ Drużyna
-</button>
 
+>
+
+🏕️ Drużyna </button>
 
 <button
 class="nav-btn"
 onclick="showPage('rankingPage',this)"
->
-🏆 Punktacja
-</button>
 
+>
+
+🏆 Punktacja </button>
 
 <button
 class="nav-btn"
 onclick="showPage('chronicle',this)"
->
-📖 Kronika
-</button>
 
+>
+
+📖 Kronika </button>
 
 <button
 class="nav-btn"
 onclick="showPage('calendarPage',this)"
->
-📅 Kalendarz
-</button>
 
+>
+
+📅 Kalendarz </button>
 
 <button
 class="nav-btn"
 onclick="showPage('documentsPage',this)"
->
-📄 Dokumenty
-</button>
 
+>
+
+📄 Dokumenty </button>
 
 <button
 class="nav-btn"
 onclick="showPage('adminPage',this)"
+
 >
-⚙️ Panel Kadry
-</button>
+
+⚙️ Panel Kadry </button>
 
 </nav>
-
 
 <!-- =========================================================
      1. DRUŻYNA
@@ -1741,13 +2065,11 @@ im. Krzysztofa Kamila Baczyńskiego
 
 </div>
 
-
 <section>
 
 <h2>
 O drużynie
 </h2>
-
 
 <div class="about">
 
@@ -1762,7 +2084,6 @@ w Krakowie.
 
 </p>
 
-
 <p>
 
 Naszą drużynę tworzą harcerze,
@@ -1776,7 +2097,6 @@ harcerstwa.
 
 </p>
 
-
 <p>
 
 Drużyna jest podzielona na zastępy,
@@ -1787,9 +2107,7 @@ obrzędowość i system pracy.
 
 </div>
 
-
 <div class="info-boxes">
-
 
 <div class="info-box">
 
@@ -1807,7 +2125,6 @@ Krzysztof Kamil Baczyński
 
 </div>
 
-
 <div class="info-box">
 
 <div class="info-icon">
@@ -1823,7 +2140,6 @@ Lew • Żubr • Skała • Puszcza
 </p>
 
 </div>
-
 
 <div class="info-box">
 
@@ -1842,7 +2158,6 @@ przygoda i służba
 
 </div>
 
-
 <div class="info-box">
 
 <div class="info-icon">
@@ -1860,18 +2175,15 @@ odpowiedzialność i przyjaźń
 
 </div>
 
-
 </div>
 
 </section>
-
 
 <section>
 
 <h2>
 Nasza drużyna
 </h2>
-
 
 <div class="about">
 
@@ -1885,22 +2197,18 @@ najważniejszych wydarzeniach.
 
 </p>
 
-
 <p>
 
 Możemy również rozbudować tę
-stronę o informacje dotyczące
-<strong>
+stronę o informacje dotyczące <strong>
 zastępów, kadry, obrzędowości
-oraz historii drużyny.
-</strong>
+oraz historii drużyny. </strong>
 
 </p>
 
 </div>
 
 </section>
-
 
 <div class="footer">
 
@@ -1909,7 +2217,6 @@ oraz historii drużyny.
 </div>
 
 </div>
-
 
 <!-- =========================================================
      2. PUNKTACJA
@@ -1926,7 +2233,6 @@ class="page"
 🏆 Punktacja Zastępów
 </h2>
 
-
 <p
 id="firebaseError"
 style="
@@ -1935,7 +2241,6 @@ color:#a00000;
 "
 ></p>
 
-
 <div
 class="ranking"
 id="ranking"
@@ -1943,22 +2248,17 @@ id="ranking"
 Ładowanie punktacji...
 </div>
 
-
 <div class="chart-container">
 
 <canvas id="chart"></canvas>
 
 </div>
 
-
-<!-- REGULAMIN -->
-
 <div class="accordion">
 
 <h3 style="text-align:center;">
 Regulamin Punktacji
 </h3>
-
 
 <button class="acc-btn">
 Punktacja
@@ -2000,7 +2300,6 @@ Kurs zakończony certyfikatem +10
 </ul>
 
 </div>
-
 
 <button class="acc-btn">
 Zawiszacy ×1.2
@@ -2045,7 +2344,6 @@ Zastęp posiada proporcowego
 </ul>
 
 </div>
-
 
 <button class="acc-btn">
 Bojowe Szkoły ×1.4
@@ -2092,7 +2390,6 @@ oraz sprzęt
 
 </div>
 
-
 <button class="acc-btn">
 Grupy Szturmowe ×1.6
 </button>
@@ -2137,7 +2434,6 @@ Zastęp posiada swoją apteczkę
 
 </section>
 
-
 <div class="footer">
 
 44 KDH im. Krzysztofa Kamila Baczyńskiego
@@ -2145,7 +2441,6 @@ Zastęp posiada swoją apteczkę
 </div>
 
 </div>
-
 
 <!-- =========================================================
      3. KRONIKA
@@ -2162,7 +2457,6 @@ class="page"
 📖 Kronika Drużyny
 </h2>
 
-
 <div class="chronicle-intro">
 
 <p>
@@ -2170,7 +2464,6 @@ class="page"
 Witaj w kronice 44 KDH!
 </strong>
 </p>
-
 
 <p>
 
@@ -2184,9 +2477,7 @@ chwile spędzone razem.
 
 </div>
 
-
 <div class="events">
-
 
 <div class="event">
 
@@ -2204,7 +2495,6 @@ tutaj uzupełniony.
 </p>
 
 </div>
-
 
 <div class="event">
 
@@ -2225,7 +2515,6 @@ zastępów.
 
 </div>
 
-
 <div class="event">
 
 <h3>
@@ -2243,11 +2532,9 @@ dodawać tutaj.
 
 </div>
 
-
 </div>
 
 </section>
-
 
 <section>
 
@@ -2255,9 +2542,7 @@ dodawać tutaj.
 📸 Galeria
 </h2>
 
-
 <div class="gallery">
-
 
 <div class="gallery-item">
 <img
@@ -2266,14 +2551,12 @@ alt="Zdjęcie drużyny"
 >
 </div>
 
-
 <div class="gallery-item">
 <img
 src="2.jpg"
 alt="Zdjęcie drużyny"
 >
 </div>
-
 
 <div class="gallery-item">
 <img
@@ -2282,14 +2565,12 @@ alt="Zdjęcie drużyny"
 >
 </div>
 
-
 <div class="gallery-item">
 <img
 src="4.jpg"
 alt="Zdjęcie drużyny"
 >
 </div>
-
 
 <div class="gallery-item">
 <img
@@ -2298,7 +2579,6 @@ alt="Zdjęcie drużyny"
 >
 </div>
 
-
 <div class="gallery-item">
 <img
 src="6.jpg"
@@ -2306,11 +2586,9 @@ alt="Zdjęcie drużyny"
 >
 </div>
 
-
 </div>
 
 </section>
-
 
 <div class="footer">
 
@@ -2319,7 +2597,6 @@ alt="Zdjęcie drużyny"
 </div>
 
 </div>
-
 
 <!-- =========================================================
      4. KALENDARZ
@@ -2335,7 +2612,6 @@ class="page"
 <h2>
 📅 Kalendarz Drużyny
 </h2>
-
 
 <div class="chronicle-intro">
 
@@ -2359,19 +2635,7 @@ musi być udostępniony publicznie.
 
 </div>
 
-
 <div class="calendar-container">
-
-<!-- =====================================================
-     WKLEJ TUTAJ KOD IFRAME Z GOOGLE CALENDAR
-
-     Google Calendar →
-     Ustawienia →
-     wybierz kalendarz →
-     Integracja kalendarza →
-     Kod do umieszczenia na stronie
-
-===================================================== -->
 
 <iframe
 src="https://calendar.google.com/calendar/embed?src=pl.polish%23holiday%40group.v.calendar.google.com&ctz=Europe%2FWarsaw"
@@ -2384,7 +2648,6 @@ scrolling="no"
 
 </section>
 
-
 <div class="footer">
 
 44 KDH im. Krzysztofa Kamila Baczyńskiego
@@ -2392,7 +2655,6 @@ scrolling="no"
 </div>
 
 </div>
-
 
 <!-- =========================================================
      5. DOKUMENTY
@@ -2409,7 +2671,6 @@ class="page"
 📄 Dokumenty
 </h2>
 
-
 <div class="about">
 
 <p>
@@ -2421,9 +2682,7 @@ i materiały potrzebne harcerzom.
 
 </div>
 
-
 <div class="pdfs">
-
 
 <div class="pdf">
 
@@ -2436,6 +2695,7 @@ Młodzik
 <a
 href="mlodzik.pdf"
 target="_blank"
+
 >
 
 <button>
@@ -2445,7 +2705,6 @@ Otwórz PDF
 </a>
 
 </div>
-
 
 <div class="pdf">
 
@@ -2458,6 +2717,7 @@ Wywiadowca
 <a
 href="wywiadowca.pdf"
 target="_blank"
+
 >
 
 <button>
@@ -2467,7 +2727,6 @@ Otwórz PDF
 </a>
 
 </div>
-
 
 <div class="pdf">
 
@@ -2480,6 +2739,7 @@ Otwórz PDF
 <a
 href="cwik.pdf"
 target="_blank"
+
 >
 
 <button>
@@ -2489,7 +2749,6 @@ Otwórz PDF
 </a>
 
 </div>
-
 
 <div class="pdf">
 
@@ -2502,6 +2761,7 @@ Zgoda
 <a
 href="zgoda.pdf"
 target="_blank"
+
 >
 
 <button>
@@ -2512,11 +2772,9 @@ Otwórz PDF
 
 </div>
 
-
 </div>
 
 </section>
-
 
 <div class="footer">
 
@@ -2525,7 +2783,6 @@ Otwórz PDF
 </div>
 
 </div>
-
 
 <!-- =========================================================
      6. PANEL KADRY
@@ -2542,9 +2799,6 @@ class="page"
 ⚙️ Panel Kadry
 </h2>
 
-
-<!-- LOGOWANIE -->
-
 <div
 class="panel"
 id="loginBox"
@@ -2556,45 +2810,41 @@ id="loginBox"
 Logowanie kadry
 </h3>
 
-
 <p>
 Panel jest przeznaczony
 wyłącznie dla kadry drużyny.
 </p>
 
-
 <input
 type="email"
 id="adminEmail"
 placeholder="Email"
+autocomplete="username"
+
 >
 
-
 <br>
-
 
 <input
 type="password"
 id="adminPassword"
 placeholder="Hasło"
->
+autocomplete="current-password"
 
+>
 
 <br>
 
-
 <button
 onclick="loginAdmin()"
+
 >
-Zaloguj
-</button>
+
+Zaloguj </button>
 
 </div>
 
 </div>
-
-
-<!-- PANEL PO ZALOGOWANIU -->
 
 <div
 class="panel"
@@ -2602,30 +2852,27 @@ id="adminContent"
 style="display:none;"
 >
 
-
 <div
 class="user-info"
 id="userInfo"
 >
 </div>
 
-
 <div style="text-align:right;">
 
 <button
 class="logout"
 onclick="logoutAdmin()"
+
 >
-Wyloguj
-</button>
+
+Wyloguj </button>
 
 </div>
-
 
 <h3>
 🏆 Zarządzanie punktacją
 </h3>
-
 
 <p>
 
@@ -2639,18 +2886,15 @@ stronę.
 
 </p>
 
-
 <div id="adminTeams">
 
 Ładowanie...
 
 </div>
 
-
 </div>
 
 </section>
-
 
 <div class="footer">
 
@@ -2659,7 +2903,6 @@ stronę.
 </div>
 
 </div>
-
 
 <!-- =========================================================
      JAVASCRIPT STRONY
@@ -2681,39 +2924,60 @@ function showPage(
         .querySelectorAll(".page")
         .forEach(
             page => {
+
                 page.classList.remove(
                     "active"
                 );
+
             }
         );
 
 
-    document
-        .getElementById(pageId)
-        .classList.add(
+    const selectedPage =
+        document.getElementById(
+            pageId
+        );
+
+
+    if(selectedPage){
+
+        selectedPage.classList.add(
             "active"
         );
+
+    }
 
 
     document
         .querySelectorAll(".nav-btn")
         .forEach(
             btn => {
+
                 btn.classList.remove(
                     "active"
                 );
+
             }
         );
 
 
-    button.classList.add(
-        "active"
-    );
+    if(button){
+
+        button.classList.add(
+            "active"
+        );
+
+    }
 
 
     window.scrollTo({
-        top:0,
-        behavior:"smooth"
+
+        top:
+            0,
+
+        behavior:
+            "smooth"
+
     });
 
 }
@@ -2726,10 +2990,13 @@ function showPage(
 document
 .querySelectorAll(".acc-btn")
 .forEach(
+
     btn => {
 
         btn.addEventListener(
+
             "click",
+
             () => {
 
                 const content =
@@ -2741,6 +3008,7 @@ document
                     ".acc-content"
                 )
                 .forEach(
+
                     c => {
 
                         if(
@@ -2757,6 +3025,7 @@ document
                         }
 
                     }
+
                 );
 
 
@@ -2786,16 +3055,41 @@ document
                 }
 
             }
+
         );
 
     }
+
+);
+
+
+/* =========================================================
+   ENTER W POLU HASŁA
+========================================================= */
+
+document
+.getElementById("adminPassword")
+.addEventListener(
+
+    "keydown",
+
+    function(event){
+
+        if(
+            event.key === "Enter"
+        ){
+
+            loginAdmin();
+
+        }
+
+    }
+
 );
 
 
 </script>
 
-
 </body>
 
 </html>
-```
